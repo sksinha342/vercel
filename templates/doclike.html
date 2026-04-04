@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Scanner: Image & PDF</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: #242424; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #canvas-container { position: relative; margin: 20px auto; border: 1px solid #333; display: inline-block; background: #000; overflow: hidden; line-height: 0; }
+        canvas { max-width: 100%; display: block; }
+        .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 15px; background: #333; border-radius: 10px; margin-bottom: 20px; }
+        .input-group { display: flex; flex-direction: column; align-items: center; }
+        label { font-size: 12px; margin-bottom: 5px; color: #aaa; }
+        input { padding: 8px; border-radius: 5px; border: 1px solid #444; background: #1a1a1a; color: white; text-align: center; }
+        
+        .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
+        .btn-reset { background: #57606f; grid-column: span 2; }
+        .btn-img { background: #2ed573; }
+        .btn-pdf { background: #ff4757; }
+        button:hover { opacity: 0.9; transform: scale(0.98); }
+
+        .dot { position: absolute; width: 16px; height: 16px; background: #1e90ff; border-radius: 50%; border: 2px solid white; transform: translate(-50%, -50%); cursor: move; z-index: 10; display: none; }
+        .mid-dot { background: #ffa502; width: 12px; height: 12px; z-index: 5; }
+        
+        #filename { width: 100%; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #1e90ff; padding: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color: #1e90ff;">Document Toolkit</h2>
+    <input type="file" id="upload" accept="image/*" style="margin-bottom: 15px; width: 100%;">
+
+    <div id="canvas-container">
+        <canvas id="editorCanvas"></canvas>
+        <div id="p0" class="dot"></div><div id="p1" class="dot"></div>
+        <div id="p2" class="dot"></div><div id="p3" class="dot"></div>
+        <div id="m0" class="dot mid-dot"></div><div id="m1" class="dot mid-dot"></div>
+        <div id="m2" class="dot mid-dot"></div><div id="m3" class="dot mid-dot"></div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-reset" onclick="resetPoints()">Reset to Full Screen</button>
+        <div class="input-group">
+            <label>Rotation (°)</label>
+            <input type="number" id="rotateInput" value="0" style="width: 70px;">
+        </div>
+        <div class="input-group">
+            <label>Target KB</label>
+            <input type="number" id="targetKb" placeholder="Max KB">
+        </div>
+    </div>
+
+    <div style="text-align: left; background: #333; padding: 15px; border-radius: 10px;">
+        <label>File Name (No extension needed):</label>
+        <input type="text" id="filename" value="document_1">
+        
+        <div class="btn-box">
+            <button class="btn-img" onclick="processFile('jpg')">SAVE AS IMAGE (.jpg)</button>
+            <button class="btn-pdf" onclick="processFile('pdf')">SAVE AS PDF (.pdf)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('editorCanvas');
+    const ctx = canvas.getContext('2d');
+    const cornerDots = [document.getElementById('p0'), document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3')];
+    const midDots = [document.getElementById('m0'), document.getElementById('m1'), document.getElementById('m2'), document.getElementById('m3')];
+    const allDots = [...cornerDots, ...midDots];
+    
+    let img = new Image();
+    let points = [];
+    let isImageLoaded = false;
+
+    document.getElementById('upload').onchange = function(e) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            img.onload = function() {
+                const name = e.target.files[0].name.split('.').slice(0, -1).join('.');
+                document.getElementById('filename').value = name;
+                
+                canvas.width = img.width > 800 ? 800 : img.width;
+                canvas.height = (img.height / img.width) * canvas.width;
+                
+                isImageLoaded = true;
+                // Dots show karein
+                allDots.forEach(d => d.style.display = 'block');
+                resetPoints();
+            }
+            img.src = event.target.result;
+        }
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    function resetPoints() {
+        if(!isImageLoaded) return;
+        points = [
+            {x: 0, y: 0}, {x: canvas.width, y: 0},
+            {x: canvas.width, y: canvas.height}, {x: 0, y: canvas.height}
+        ];
+        updateUI();
+    }
+
+    function updateUI() {
+        points.forEach((p, i) => {
+            cornerDots[i].style.left = p.x + 'px';
+            cornerDots[i].style.top = p.y + 'px';
+        });
+        
+        const midCoords = [
+            {x: (points[0].x + points[1].x)/2, y: (points[0].y + points[1].y)/2},
+            {x: (points[1].x + points[2].x)/2, y: (points[1].y + points[2].y)/2},
+            {x: (points[2].x + points[3].x)/2, y: (points[2].y + points[3].y)/2},
+            {x: (points[3].x + points[0].x)/2, y: (points[3].y + points[0].y)/2}
+        ];
+
+        midCoords.forEach((m, i) => {
+            midDots[i].style.left = m.x + 'px';
+            midDots[i].style.top = m.y + 'px';
+        });
+        draw();
+    }
+
+    // Drag Logic
+    cornerDots.forEach((dot, index) => {
+        dot.onmousedown = function(e) {
+            e.preventDefault();
+            document.onmousemove = function(e2) {
+                const rect = canvas.getBoundingClientRect();
+                points[index].x = Math.max(0, Math.min(canvas.width, e2.clientX - rect.left));
+                points[index].y = Math.max(0, Math.min(canvas.height, e2.clientY - rect.top));
+                updateUI();
+            };
+            document.onmouseup = () => document.onmousemove = null;
+        };
+    });
+
+    midDots.forEach((dot, index) => {
+        dot.onmousedown = function(e) {
+            e.preventDefault();
+            let pA = index, pB = (index + 1) % 4;
+            document.onmousemove = function(e2) {
+                const rect = canvas.getBoundingClientRect();
+                let dx = (e2.clientX - rect.left) - (points[pA].x + points[pB].x)/2;
+                let dy = (e2.clientY - rect.top) - (points[pA].y + points[pB].y)/2;
+                [pA, pB].forEach(i => {
+                    points[i].x = Math.max(0, Math.min(canvas.width, points[i].x + dx));
+                    points[i].y = Math.max(0, Math.min(canvas.height, points[i].y + dy));
+                });
+                updateUI();
+            };
+            document.onmouseup = () => document.onmousemove = null;
+        };
+    });
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        // Sirf tab draw karein jab image loaded ho
+        if(isImageLoaded) {
+            ctx.beginPath();
+            ctx.lineWidth = 2; ctx.strokeStyle = "#1e90ff";
+            ctx.moveTo(points[0].x, points[0].y);
+            points.forEach(p => ctx.lineTo(p.x, p.y));
+            ctx.closePath(); ctx.stroke();
+        }
+    }
+
+    function processFile(format) {
+    if(!isImageLoaded) return alert("Pehle image select karein!");
+    
+    const filename = document.getElementById('filename').value || "doc";
+    const targetKb = document.getElementById('targetKb').value;
+    const rotate = document.getElementById('rotateInput').value;
+
+    // --- STEP 1: Blue lines hatao sirf download ke liye ---
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    // --- STEP 2: Ab image capture karein ---
+    canvas.toBlob((blob) => {
+        const formData = new FormData();
+        formData.append('image', blob);
+        formData.append('points', JSON.stringify(points));
+        formData.append('rotate', rotate);
+        formData.append('target_kb', targetKb);
+        formData.append('as_pdf', format === 'pdf' ? 'true' : 'false');
+
+        fetch('/edit', { method: 'POST', body: formData })
+        .then(res => res.blob())
+        .then(downloadBlob => {
+            const url = window.URL.createObjectURL(downloadBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename + (format === 'pdf' ? ".pdf" : ".jpg");
+            a.click();
+            
+            // --- STEP 3: Download ke baad wapas blue lines dikhao ---
+            updateUI(); 
+        });
+    }, 'image/jpeg', 0.95);
+}
+</script>
+</body>
+</html>

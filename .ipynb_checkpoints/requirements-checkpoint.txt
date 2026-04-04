@@ -1,0 +1,6 @@
+Flask
+qrcode
+Pillow
+PyPDF2
+cloudinary
+psycopg2-binary

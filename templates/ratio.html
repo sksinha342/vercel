@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Advanced Image Studio - Custom Ratio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
+        .main-container { max-width: 900px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 30px rgba(0,0,0,0.6); }
+        .img-wrapper { width: 100%; max-height: 500px; background: #000; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #333; }
+        img { max-width: 100%; display: block; }
+        
+        .toolbar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: #2d2d2d; padding: 20px; border-radius: 8px; }
+        .control-item { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 13px; color: #27ae60; font-weight: bold; text-transform: uppercase; }
+        
+        input, select { background: #3d3d3d; border: 1px solid #555; color: white; padding: 10px; border-radius: 5px; outline: none; }
+        input:focus { border-color: #27ae60; }
+        
+        .btn-group { display: flex; gap: 5px; }
+        button { flex: 1; padding: 10px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; transition: 0.2s; background: #444; color: white; }
+        .btn-primary { background: #3498db; }
+        .btn-download { background: #27ae60; width: 100%; font-size: 18px; margin-top: 20px; height: 50px; }
+        button:hover { opacity: 0.8; transform: translateY(-1px); }
+
+        #customRatioInputs { display: none; margin-top: 10px; background: #3d3d3d; padding: 10px; border-radius: 5px; border-left: 4px solid #27ae60; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h2 style="text-align: center; color: #27ae60; margin-top: 0;">⚡ Advanced Image Toolkit</h2>
+    
+    <input type="file" id="upload" accept="image/*" style="margin-bottom: 20px; width: 100%;">
+
+    <div class="img-wrapper">
+        <img id="image">
+    </div>
+
+    <div class="toolbar">
+        <div class="control-item">
+            <label>Ratio Lock</label>
+            <select id="ratioSelect">
+                <option value="NaN">Free (No Lock)</option>
+                <option value="1">1:1 (Square)</option>
+                <option value="1.333">4:3 (Classic)</option>
+                <option value="1.777">16:9 (HD)</option>
+                <option value="custom">-- Custom Ratio --</option>
+            </select>
+            
+            <div id="customRatioInputs">
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <input type="number" id="ratioW" placeholder="W" style="width: 50px;">
+                    <span>:</span>
+                    <input type="number" id="ratioH" placeholder="H" style="width: 50px;">
+                    <button class="btn-primary" onclick="setCustomRatio()" style="font-size: 12px; padding: 5px;">Apply</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-item">
+            <label>Zoom & Rotation</label>
+            <div class="btn-group">
+                <button onclick="cropper.zoom(0.1)">+</button>
+                <button onclick="cropper.zoom(-0.1)">-</button>
+                <button onclick="adjRotate(-1)">↺</button>
+                <input type="number" id="rotateDeg" value="0" style="width: 60px; text-align: center;">
+                <button onclick="adjRotate(1)">↻</button>
+            </div>
+        </div>
+
+        <div class="control-item">
+            <label>Target Size (KB)</label>
+            <input type="number" id="targetKb" placeholder="e.g. 50">
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <label>Filename (Edit before download):</label>
+        <input type="text" id="filename" style="width: 100%; margin-top: 8px;">
+        <button class="btn-download" id="downloadBtn">Download Edited Image</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script>
+    let cropper;
+    const image = document.getElementById('image');
+    const rotateInput = document.getElementById('rotateDeg');
+    const customUI = document.getElementById('customRatioInputs');
+
+    document.getElementById('upload').onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            document.getElementById('filename').value = file.name;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                image.src = event.target.result;
+                if (cropper) cropper.destroy();
+                initCropper(NaN);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    function initCropper(ratio) {
+        cropper = new Cropper(image, {
+            aspectRatio: ratio,
+            viewMode: 1,
+            autoCropArea: 0.8,
+            checkOrientation: false
+        });
+    }
+
+    // Ratio Switch Logic
+    document.getElementById('ratioSelect').onchange = function() {
+        if (this.value === 'custom') {
+            customUI.style.display = 'block';
+        } else {
+            customUI.style.display = 'none';
+            cropper.setAspectRatio(parseFloat(this.value));
+        }
+    };
+
+    // User Custom Ratio Apply
+    function setCustomRatio() {
+        const w = parseFloat(document.getElementById('ratioW').value);
+        const h = parseFloat(document.getElementById('ratioH').value);
+        if (w > 0 && h > 0) {
+            cropper.setAspectRatio(w / h);
+        } else {
+            alert("Please enter valid Width and Height");
+        }
+    }
+
+    function adjRotate(val) {
+        rotateInput.value = (parseInt(rotateInput.value) + val + 360) % 360;
+        cropper.rotateTo(rotateInput.value);
+    }
+
+    document.getElementById('rotateDeg').onchange = function() {
+        cropper.rotateTo(this.value);
+    };
+
+    document.getElementById('downloadBtn').onclick = () => {
+        if (!cropper) return alert("Upload an image first!");
+        
+        const canvas = cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' });
+        const targetKb = document.getElementById('targetKb').value;
+        const filename = document.getElementById('filename').value;
+
+        canvas.toBlob((blob) => {
+            const formData = new FormData();
+            formData.append('image', blob);
+            formData.append('target_kb', targetKb);
+
+            fetch('/edit', { method: 'POST', body: formData })
+            .then(res => res.blob())
+            .then(downloadBlob => {
+                const url = window.URL.createObjectURL(downloadBlob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename; a.click();
+            });
+        }, 'image/jpeg', 0.95);
+    };
+</script>
+</body>
+</html>

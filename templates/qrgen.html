@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>QR Generator</title>
+</head>
+<body>
+    <div class="container">
+        <h2>📱 QR Code Generator</h2>
+        
+        <form action="/qrgen" method="POST">
+            <input type="text" name="data" placeholder="URL ya Text yahan likhein..." 
+                   value="{{ old_data if old_data else '' }}" required>
+            <button type="submit">Generate QR Code</button>
+        </form>
+
+        {% if qr_image %}
+        <div style="margin-top: 20px;">
+            <h3>Aapka QR Code:</h3>
+            <img src="{{ qr_image }}" alt="QR Code" style="border: 1px solid #ddd; border-radius: 8px;">
+            <br><br>
+            <a href="{{ qr_image }}" download="my_qrcode.png">
+                <button style="background-color: #28a745;">Download PNG</button>
+            </a>
+            <p style="font-size: 0.8em; color: #666;">Upar text edit karke phir se generate kar sakte hain.</p>
+        </div>
+        {% endif %}
+
+        <a href="/" class="back-link">← Wapas Jayein</a>
+    </div>
+</body>
+</html>
