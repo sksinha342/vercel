@@ -13,12 +13,6 @@ def index():
     # Index page par sabhi tools ki list dikhayenge
     return render_template('index.html')
 
-@app.route('/qrgen', methods=['GET', 'POST'])
-def qr_route():
-    if request.method == 'POST':
-        data = request.form.get('data')
-        return generate_qr(data)
-    return render_template('qrgen.html')
 @app.route('/resize', methods=['GET', 'POST'])
 def resize():
     if request.method == 'POST':
@@ -32,12 +26,6 @@ def imgtopdf():
         return doclike_img()
     return render_template('doclike.html')
 
-@app.route('/pdfaddpass', methods=['GET', 'POST'])
-def pdf_route():
-    if request.method == 'POST':
-        # Yahan aapka PDF logic chalega
-        return protect_pdf()
-    return render_template('pdfaddpass.html')
 # app.py ke end
 if __name__ == '__main__':
     app.run(debug=True)
