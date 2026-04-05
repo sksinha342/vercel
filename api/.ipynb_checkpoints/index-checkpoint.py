@@ -67,6 +67,5 @@ def index():
     # Index page par 'tools' variable ke roop mein list bhej rahe hain
     return render_template("index.html", tools=ALL_TOOLS)
 
-if __name__ == "__main__":
-    # Local testing ke liye port 5006
-    app.run(debug=True, port=5006)
+def handler(request, response):
+    return app(request.environ, response.start_response)
