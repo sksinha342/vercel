@@ -1,9 +1,22 @@
-from flask import request, send_file
+from flask import Blueprint, request, send_file, render_template
 import io
 from PIL import Image
 
+# Blueprint name must match filename_bp logic in index.py
+resize_bp = Blueprint("resize", __name__)
+
+# Metadata for Dashboard
+metadata = {
+    "title": "Image Resizer & Compressor",
+    "description": "Apni images ka size (KB) kam karein aur quality maintain rakhein.",
+    "image": "logo.png"  # Sirf file ka naam likhein, path index.py sambhal lega
+}
+
+@resize_bp.route("/resize", methods=["GET", "POST"])
 def ratio_img():
-    # 1. File check karein
+    if request.method == "GET":
+        return render_template("ratio.html")
+
     if 'image' not in request.files:
         return "No file uploaded", 400
     
@@ -18,15 +31,12 @@ def ratio_img():
         img = img.convert("RGB")
 
     img_io = io.BytesIO()
-    
+    quality = 95
+
+    # Logic to hit target KB
     if target_kb and target_kb.isdigit():
         target_bytes = int(target_kb) * 1024
-        quality = 95
-        
-        # Initial save
         img.save(img_io, 'JPEG', quality=quality)
-        
-        # Quality adjust karein agar size bada hai
         while img_io.tell() > target_bytes and quality > 10:
             img_io.seek(0)
             img_io.truncate()
@@ -34,6 +44,11 @@ def ratio_img():
             img.save(img_io, 'JPEG', quality=quality)
     else:
         img.save(img_io, 'JPEG', quality=95)
-    
+
     img_io.seek(0)
-    return send_file(img_io, mimetype='image/jpeg', as_attachment=True, download_name="resized.jpg")
+    return send_file(
+        img_io,
+        mimetype='image/jpeg',
+        as_attachment=True,
+        download_name="resized.jpg"
+    )

@@ -1,44 +1,72 @@
-from flask import Flask, render_template, request
-import sys, os
+from flask import Flask, render_template
+import os
+import sys
+import importlib
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# Project ki root directory ko path mein add karein
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
 
-from pages.qrgen import generate_qr
-from pages.pdfaddpass import protect_pdf
-from pages.ratio import ratio_img
-from pages.doclike import doclike_img
+app = Flask(__name__, 
+            template_folder=os.path.join(BASE_DIR, "templates"), 
+            static_folder=os.path.join(BASE_DIR, "static"))
 
-app = Flask(__name__, template_folder="../templates")
+TOOLS_FOLDER = os.path.join(BASE_DIR, "pages")
 
-@app.route('/')
+def load_tools():
+    tools_list = []
+    
+    # Agar pages folder nahi hai toh khali list bhejein
+    if not os.path.exists(TOOLS_FOLDER):
+        return []
+
+    # Pages folder ki har .py file ko scan karein
+    for file in os.listdir(TOOLS_FOLDER):
+        if file.endswith(".py") and not file.startswith("_"):
+            module_name = file[:-3] # Extension (.py) hatao
+            
+            try:
+                # Module ko dynamically import karein
+                # Note: pages.module_name format use ho raha hai
+                module = importlib.import_module(f"pages.{module_name}")
+                
+                # Blueprint check karein (Jaise: doclike_bp, qrgen_bp)
+                blueprint_name = f"{module_name}_bp"
+                
+                if hasattr(module, blueprint_name):
+                    bp = getattr(module, blueprint_name)
+                    app.register_blueprint(bp)
+
+                    # --- METADATA RETRIEVAL ---
+                    # Module ke andar se 'metadata' variable uthao
+                    # Agar module mein metadata nahi hai, toh default values use karein
+                    metadata = getattr(module, "metadata", {
+                        "title": module_name.replace("_", " ").title(),
+                        "description": "Powerful Python utility tool.",
+                        "image": "default.png"
+                    })
+
+                    tools_list.append({
+                        "title": metadata.get("title"),
+                        "desc": metadata.get("description"),
+                        "img": metadata.get("image"),
+                        "url": f"/{module_name}" # Blueprint ka route same file name jaisa hona chahiye
+                    })
+                    print(f"Successfully loaded: {module_name}")
+            
+            except Exception as e:
+                print(f"Error loading module {module_name}: {e}")
+
+    return tools_list
+
+# Tools ko ek baar load karein taaki har request par import na karna pade
+ALL_TOOLS = load_tools()
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    # Index page par 'tools' variable ke roop mein list bhej rahe hain
+    return render_template("index.html", tools=ALL_TOOLS)
 
-@app.route('/qrgen', methods=['GET','POST'])
-def qr_route():
-    if request.method == 'POST':
-        data = request.form.get('data')
-        return generate_qr(data)
-    return render_template('qrgen.html')
-
-@app.route('/resize', methods=['GET','POST'])
-def resize():
-    if request.method == 'POST':
-        return ratio_img()
-    return render_template('ratio.html')
-
-@app.route('/imgtopdf', methods=['GET','POST'])
-def imgtopdf():
-    if request.method == 'POST':
-        return doclike_img()
-    return render_template('doclike.html')
-
-@app.route('/pdfaddpass', methods=['GET','POST'])
-def pdf_route():
-    if request.method == 'POST':
-        return protect_pdf()
-    return render_template('pdfaddpass.html')
-
-# Vercel handler
-def handler(request, response):
-    return app(request.environ, response.start_response)
+if __name__ == "__main__":
+    # Local testing ke liye port 5006
+    app.run(debug=True, port=5006)
