@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Password Manager</title>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding: 40px; }
+        .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
+        h2 { color: #2c3e50; margin-bottom: 20px; }
+        .tab-container { display: flex; background: #eee; border-radius: 8px; margin-bottom: 20px; padding: 5px; }
+        .tab { flex: 1; padding: 10px; cursor: pointer; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        .tab.active { background: #007bff; color: white; }
+        input[type="file"], input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { width: 100%; padding: 15px; background: #27ae60; border: none; color: white; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn:hover { background: #219150; }
+        #action_label { font-weight: bold; color: #007bff; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>🔐 PDF Password Manager</h2>
+    
+    <div class="tab-container">
+        <div class="tab active" onclick="setMode('add', this)">Add Password</div>
+        <div class="tab" onclick="setMode('remove', this)">Remove Password</div>
+    </div>
+
+    <form action="/pdfpass" method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="action" id="action_input" value="add">
+        
+        <label id="action_label">Setting password for your PDF</label>
+        
+        <input type="file" name="pdf_file" accept=".pdf" required>
+        <input type="password" name="password" placeholder="Enter Password" required>
+        
+        <button type="submit" class="btn">Process & Download</button>
+    </form>
+</div>
+
+<script>
+    function setMode(mode, el) {
+        document.getElementById('action_input').value = mode;
+        document.getElementById('action_label').innerText = mode === 'add' ? 'Setting password for your PDF' : 'Removing password from your PDF';
+        
+        // UI Tabs update
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        
+        // Button color change
+        const btn = document.querySelector('.btn');
+        if(mode === 'remove') {
+            btn.style.background = '#e67e22';
+            btn.innerText = "Unlock & Download";
+        } else {
+            btn.style.background = '#27ae60';
+            btn.innerText = "Lock & Download";
+        }
+    }
+</script>
+
+</body>
+</html>

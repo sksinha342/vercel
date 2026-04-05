@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Password Finder | Python Tool Hub</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #eee; margin: 0; padding: 20px; }
+        .container { max-width: 500px; margin: 50px auto; background: #1e1e1e; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
+        h2 { color: #ff4757; margin-bottom: 10px; }
+        .input-group { text-align: left; margin-bottom: 15px; }
+        label { display: block; font-size: 14px; color: #888; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; box-sizing: border-box; background: #252525; border: 1px solid #444; color: white; border-radius: 8px; }
+        button { width: 100%; padding: 15px; background: #ff4757; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #ff6b81; transform: scale(1.02); }
+        button:disabled { background: #555; cursor: not-allowed; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; font-weight: bold; }
+        .loading { color: #ffa502; font-size: 14px; animation: blink 1s infinite; }
+        @keyframes blink { 0% {opacity:1;} 50% {opacity:0.5;} 100% {opacity:1;} }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🔑 PDF Password Finder</h2>
+    <p style="color: #666; font-size: 13px; margin-bottom: 25px;">Advance Combination Search (Brute-force)</p>
+    
+    <form id="crackForm">
+        <div class="input-group">
+            <label>Select Locked PDF:</label>
+            <input type="file" name="pdf_file" accept=".pdf" required>
+        </div>
+        <div class="input-group">
+            <label>Possible Characters (e.g. 123abc):</label>
+            <input type="text" name="chars" placeholder="Example: 1234567890" required>
+        </div>
+        <div class="input-group">
+            <label>Max Password Length to Search:</label>
+            <input type="number" name="max_length" placeholder="Example: 4" min="1" max="8" required>
+        </div>
+        <button type="submit" id="submitBtn">Start Searching</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById('crackForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        const resDiv = document.getElementById('result');
+        
+        btn.disabled = true;
+        btn.innerText = "Searching Combinations...";
+        resDiv.style.display = "block";
+        resDiv.style.background = "transparent";
+        resDiv.className = "loading";
+        resDiv.innerText = "🔍 Processing... Isme kuch minutes lag sakte hain, browser band na karein.";
+
+        const formData = new FormData(e.target);
+        try {
+            const response = await fetch('/pdfcrack', { method: 'POST', body: formData });
+            const data = await response.json();
+
+            btn.disabled = false;
+            btn.innerText = "Start Searching";
+            resDiv.className = "";
+            
+            if(data.status === 'success') {
+                resDiv.style.background = "#2ed573";
+                resDiv.style.color = "#fff";
+                resDiv.innerText = data.message;
+            } else {
+                resDiv.style.background = "#333";
+                resDiv.style.color = "#ff4757";
+                resDiv.innerText = data.message;
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerText = "Start Searching";
+            resDiv.innerText = "Error: Server connection failed.";
+        }
+    };
+</script>
+
+</body>
+</html>
