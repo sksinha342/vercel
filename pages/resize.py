@@ -9,7 +9,7 @@ resize_bp = Blueprint("resize", __name__)
 metadata = {
     "title": "Image Resizer & Compressor",
     "description": "Apni images ka size (KB) kam karein aur quality maintain rakhein.",
-    "image": "logo.png"  # Sirf file ka naam likhein, path index.py sambhal lega
+    "image": "pages/imgcrop.jpg"  # Sirf file ka naam likhein, path index.py sambhal lega
 }
 
 @resize_bp.route("/resize", methods=["GET", "POST"])

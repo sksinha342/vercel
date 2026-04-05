@@ -10,7 +10,7 @@ pdfcrack_bp = Blueprint("pdfcrack", __name__)
 metadata = {
     "title": "PDF Password Finder",
     "description": "Custom length aur characters (0-9, a-z) ke combination se password recover karein.",
-    "image": "logo.png" 
+    "image": "pages/passfind.jpg" 
 }
 
 @pdfcrack_bp.route("/pdfcrack", methods=["GET", "POST"])

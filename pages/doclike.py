@@ -10,7 +10,7 @@ doclike_bp = Blueprint("doclike", __name__)
 metadata = {
     "title": "Smart Doc Scanner",
     "description": "Perspective crop karein aur image ko PDF ya Clean JPG mein badlein.",
-    "image": "logo.png" 
+    "image": "pages/docscan.jpg" 
 }
 
 @doclike_bp.route("/doclike", methods=["GET", "POST"])

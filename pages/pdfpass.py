@@ -7,7 +7,7 @@ pdfpass_bp = Blueprint("pdfpass", __name__)
 metadata = {
     "title": "PDF Password Manager",
     "description": "PDF mein password lagayein ya purana password hamesha ke liye hatayein.",
-    "image": "logo.png" 
+    "image": "pages/password.jpg" 
 }
 
 @pdfpass_bp.route("/pdfpass", methods=["GET", "POST"])
