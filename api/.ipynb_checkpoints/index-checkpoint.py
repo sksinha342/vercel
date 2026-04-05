@@ -39,5 +39,5 @@ def pdf_route():
         return protect_pdf()
     return render_template('pdfaddpass.html')
 # app.py ke end mein
-if __name__ == '__main__':
-    app.run(debug=True)
+#if __name__ == '__main__':
+    #app.run(debug=True)
