@@ -16,41 +16,36 @@ TOOLS_FOLDER = os.path.join(BASE_DIR, "pages")
 def load_tools():
     tools_list = []
     
-    # Agar pages folder nahi hai toh khali list bhejein
     if not os.path.exists(TOOLS_FOLDER):
         return []
 
-    # Pages folder ki har .py file ko scan karein
-    for file in os.listdir(TOOLS_FOLDER):
+    # Files ki list ko sort karke reverse kar diya (Latest files pehle aayengi)
+    all_files = sorted(os.listdir(TOOLS_FOLDER), reverse=True)
+
+    for file in all_files:
         if file.endswith(".py") and not file.startswith("_"):
-            module_name = file[:-3] # Extension (.py) hatao
+            module_name = file[:-3] 
             
             try:
-                # Module ko dynamically import karein
-                # Note: pages.module_name format use ho raha hai
                 module = importlib.import_module(f"pages.{module_name}")
-                
-                # Blueprint check karein (Jaise: doclike_bp, qrgen_bp)
                 blueprint_name = f"{module_name}_bp"
                 
                 if hasattr(module, blueprint_name):
                     bp = getattr(module, blueprint_name)
                     app.register_blueprint(bp)
 
-                    # --- METADATA RETRIEVAL ---
-                    # Module ke andar se 'metadata' variable uthao
-                    # Agar module mein metadata nahi hai, toh default values use karein
+                    # Metadata Retrieval
                     metadata = getattr(module, "metadata", {
                         "title": module_name.replace("_", " ").title(),
                         "description": "Powerful Python utility tool.",
-                        "image": "default.png"
+                        "image": "logo.png" # Default image
                     })
 
                     tools_list.append({
                         "title": metadata.get("title"),
                         "desc": metadata.get("description"),
                         "img": metadata.get("image"),
-                        "url": f"/{module_name}" # Blueprint ka route same file name jaisa hona chahiye
+                        "url": f"/{module_name}" 
                     })
                     print(f"Successfully loaded: {module_name}")
             
@@ -59,13 +54,13 @@ def load_tools():
 
     return tools_list
 
-# Tools ko ek baar load karein taaki har request par import na karna pade
+# Ek baar load karein
 ALL_TOOLS = load_tools()
 
 @app.route("/")
 def index():
-    # Index page par 'tools' variable ke roop mein list bhej rahe hain
     return render_template("index.html", tools=ALL_TOOLS)
+
 
 def handler(request, response):
     return app(request.environ, response.start_response)

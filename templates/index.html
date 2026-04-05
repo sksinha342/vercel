@@ -3,48 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Tool Hub | Free Online Tools</title>
-    <link rel="icon" href="{{ url_for('static', filename='logo.png') }}">
+    <title>SK Sinha's Python Tool Hub - Advance PDF & Web Utilities</title>
+<meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
+<meta name="description" content="Explore advanced Python tools by SK Sinha. PDF Password Recovery, QR Generator, PDF Locker, and more utility tools for developers.">
+<meta name="keywords" content="SK Sinha, Python Tools, PDF Password Cracker, PDF Locker, QR Generator, IIT Madras Student, Bihar Developer, Python Web Apps">
+<meta name="author" content="SK Sinha 342">
+<meta name="robots" content="index, follow">
+
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sksinha342.vercel.app/">
+<meta property="og:title" content="SK Sinha's Python Tool Hub">
+<meta property="og:description" content="Free and powerful Python utility tools for everyday tasks. Created by SK Sinha.">
+<meta property="og:image" content="./static/img/footer.jpg">
+
+<meta property="twitter:card" content="summary_large_image">
+<meta property="twitter:url" content="https://sksinha342.vercel.app/">
+<meta property="twitter:title" content="SK Sinha's Python Tool Hub">
+<meta property="twitter:description" content="Free and powerful Python utility tools for everyday tasks.">
+<meta property="twitter:image" content="./static/img/footer.jpg">
+
+<link rel="canonical" href="https://sksinha342.vercel.app/">
+    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; margin: 0; }
-        header { background: #1a1a1a; color: white; padding: 15px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .hero { text-align: center; padding: 50px 20px; background: #fff; border-bottom: 1px solid #ddd; }
-        .container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; padding: 40px; max-width: 1200px; margin: auto; }
-        .card { background: white; border-radius: 12px; padding: 25px; text-decoration: none; color: #333; text-align: center; transition: 0.3s; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: #007bff; }
-        .card img { width: 70px; height: 70px; margin-bottom: 15px; }
-        .card h3 { margin: 10px 0; color: #007bff; }
-        .card p { font-size: 14px; color: #666; min-height: 40px; }
-        .btn-tag { display: inline-block; margin-top: 15px; padding: 8px 20px; background: #007bff; color: white; border-radius: 5px; font-weight: bold; }
-        footer { text-align: center; padding: 20px; background: #1a1a1a; color: white; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+        body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* --- Header Styling --- */
+        .header {
+            width: 100%; background: #333; color: white; padding: 10px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .header h1 { font-size: 18px; margin: 0; }
+        .menu-icon { font-size: 24px; cursor: pointer; }
+
+        /* --- Search Bar --- */
+        .search-container { padding: 20px; text-align: center; background: white; }
+        #toolSearch {
+            width: 80%; max-width: 400px; padding: 10px 15px;
+            border-radius: 25px; border: 1px solid #ddd; outline: none;
+        }
+
+        /* --- Navigation --- */
+        .nav-container {
+            display: none; position: fixed; top: 50px; right: 15px;
+            background: #1a4d3c; padding: 15px; border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); z-index: 1001;
+        }
+        .nav-links { list-style: none; }
+        .nav-links li { padding: 8px 0; border-bottom: 1px solid #2a5d4c; }
+        .nav-links a { color: white; text-decoration: none; font-size: 14px; }
+        .close-btn { color: white; cursor: pointer; float: right; margin-bottom: 10px; }
+
+        /* --- Breadcrumb --- */
+        .breadcrumb { padding: 10px 20px; font-size: 12px; color: #666; text-align: left; }
+        .breadcrumb a { text-decoration: none; color: #007bff; }
+
+        /* --- Tool Cards --- */
+        .container { 
+    flex: 1; 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+    gap: 20px; 
+    padding: 20px; 
+}
+
+.card { 
+    background: white; 
+    border-radius: 12px; 
+    padding: 15px; 
+    text-decoration: none; 
+    color: #333; 
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
+    transition: 0.3s;
+    border: 1px solid #eee;
+    overflow: hidden; /* Taaki image bahar na nikle */
+}
+
+.card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
+    border-color: #ff00dd; 
+}
+
+/* --- Image Fix Logic --- */
+.card img { 
+    width: 100%; 
+    height: 200px; 
+    object-fit: cover; /* Image stretch nahi hogi, center se crop hogi */
+    object-position: center; /* Center part dikhega */
+    margin-bottom: 8px; 
+    border-radius: 8px; 
+}
+
+.card h3 { 
+    font-size: 16px; 
+    color: #333; 
+    margin: 10px 0 5px 0; 
+}
+
+.card p { 
+    font-size: 12px; 
+    color: #777; 
+    line-height: 1.4; 
+    height: 34px; /* Fixed height taaki cards ek barabar dikhein */
+    overflow: hidden;
+}
+        /* --- Footer Styling --- */
+        footer { text-align: center; padding: 20px; background: white; border-top: 1px solid #ddd; margin-top: auto; }
+        .profile-pic { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; }
+        .info-text { font-size: 10px; font-weight: bold; margin-top: 5px; }
+        .social-section { padding: 15px; }
+        .social-icon { font-size: 22px; margin: 0 8px; text-decoration: none; }
+        .facebook { color: #1877F2; } .twitter { color: #1DA1F2; } .instagram { color: #C13584; }
+        .youtube { color: #FF0000; } .whatsapp { color: #25D366; }
+        .map-icon { width: 35px; vertical-align: middle; }
+        .footer-links { display: flex; justify-content: center; gap: 10px; font-size: 14px; margin-top: 10px; }
+        .footer-links a { text-decoration: none; color: blue; font-weight: bold; }
+        .copyright-section { color: red; font-size: 11px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<header>
-    <img src="{{ url_for('static', filename='logo.png') }}" width="40">
-    <h1>Python Tool Hub</h1>
-</header>
+    <header class="header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="https://sksinha342.free.nf/_image/sk-sinha3.png" width="35" alt="Logo">
+            <h1>SK Sinha's Web</h1>
+        </div>
+        <span class="menu-icon" onclick="toggleMenu()">☰</span>
+    </header>
 
-<section class="hero">
-    <h1>Free Online Tools</h1>
-    <p>Fast • Secure • Private</p>
-</section>
+    <nav class="nav-container" id="navContainer">
+        <span class="close-btn" onclick="toggleMenu()">✖</span>
+        <ul class="nav-links">
+            <li><a href="https://sksinha342.free.nf">Home</a></li>
+            <li><a href="https://sksinha342.free.nf/ImForPage/Head-foot/about.php">About</a></li>
+            <li><a href="https://sksinha342.free.nf/ImForPage/Head-foot/policy.php">Privacy</a></li>
+            <li><a href="https://sksinha342.free.nf/ImForPage/Head-foot/contact.php">Contact</a></li>
+        </ul>
+    </nav>
 
-<div class="container">
-    {% for tool in tools %}
-    <a href="{{ tool.url }}" class="card">
-        <img src="{{ url_for('static', filename=tool.img) }}" alt="icon">
-        <h3>{{ tool.title }}</h3>
-        <p>{{ tool.desc }}</p>
-        <span class="btn-tag">Open Tool</span>
-    </a>
-    {% endfor %}
-</div>
+    <div class="breadcrumb" id="breadcrumb"></div>
 
-<footer>
-    <p>© 2026 Python Tool Hub | Bihar Tech</p>
-</footer>
+    <section class="search-container">
+        <input type="text" id="toolSearch" placeholder="Search tools..." onkeyup="filterTools()">
+    </section>
 
+    <div class="container" id="toolContainer">
+        {% for tool in tools %}
+        <a href="{{ tool.url }}" class="card">
+            <img src="{{ url_for('static', filename=tool.img) }}" alt="icon">
+            <h3>{{ tool.title }}</h3>
+            <p>{{ tool.desc }}</p>
+            <div style="margin-top:10px; color:#ff00dd; font-weight:bold; font-size:11px;">Open Tool →</div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <footer>
+      
+
+        <div class="social-section">
+            <a target="blank" href="https://maps.app.goo.gl/7cGzYsyLUVj4GLmx9" class="social-icon">
+                <img class="map-icon" src="https://sksinha342.free.nf/_image/map2.png">
+            </a><br>
+            <a target="blank" href="https://www.facebook.com/profile.php?id=100055694790984" class="social-icon facebook"><i class="fab fa-facebook"></i></a>
+            <a target="blank" href="https://x.com/SK_Sinha_342" class="social-icon twitter"><i class="fab fa-twitter"></i></a>
+            <a target="blank" href="https://instagram.com/sk_sinha_342" class="social-icon instagram"><i class="fab fa-instagram"></i></a>
+            <a target="blank" href="https://youtube.com/@sk_sinha342" class="social-icon youtube"><i class="fab fa-youtube"></i></a>
+            <a href="https://wa.link/7a60qs" class="social-icon whatsapp"><i class="fab fa-whatsapp"></i></a>
+        </div>
+
+        <div class="footer-links">
+            <a href="https://sksinha342.free.nf/ImForPage/Head-foot/policy.php">🔒 POLICY</a>
+            <a href="https://sksinha342.free.nf/ImForPage/Head-foot/contact.php">📞 CONTACT</a>
+            <a href="https://sksinha342.free.nf/ImForPage/Head-foot/about.php">ℹ️ ABOUT</a>
+        </div>
+
+        <div class="copyright-section">
+            <p>SK Sinha © 2026 All Right Reserved</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            var menu = document.getElementById("navContainer");
+            menu.style.display = (menu.style.display === "block") ? "none" : "block";
+        }
+
+        function filterTools() {
+            let input = document.getElementById('toolSearch').value.toLowerCase();
+            let cards = document.getElementsByClassName('card');
+            for (let i = 0; i < cards.length; i++) {
+                let title = cards[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
+                cards[i].style.display = title.includes(input) ? "block" : "none";
+            }
+        }
+
+        function generateBreadcrumb() {
+            let breadcrumbHTML = '<a href="/">Home</a> > Tools Hub';
+            document.getElementById("breadcrumb").innerHTML = breadcrumbHTML;
+        }
+        generateBreadcrumb();
+    </script>
 </body>
 </html>

@@ -4,7 +4,7 @@ Pillow
 PyPDF2
 cloudinary
 psycopg2-binary
-
+pikepdf
 opencv-python-headless
 numpy
 img2pdf
