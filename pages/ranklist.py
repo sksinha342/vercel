@@ -10,7 +10,7 @@ ranklist_bp = Blueprint("ranklist", __name__)
 metadata = {
     "title": "Smart Rank List Generator",
     "description": "Create professional rank lists, generate PDF/Excel, and manage student results.",
-    "image": "./static/ranklist.jpg"
+    "image": "./static/pages/ranklist.jpg"
 }
 
 def format_name(name):
