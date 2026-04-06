@@ -8,3 +8,5 @@ pikepdf
 opencv-python-headless
 numpy
 img2pdf
+reportlab>=4.0.0
+openpyxl>=3.0.0
