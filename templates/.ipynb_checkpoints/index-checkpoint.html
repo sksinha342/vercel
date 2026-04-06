@@ -2,128 +2,400 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SK Sinha's Python Tool Hub - Advance PDF & Web Utilities</title>
-<meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
-<meta name="description" content="Explore advanced Python tools by SK Sinha. PDF Password Recovery, QR Generator, PDF Locker, and more utility tools for developers.">
-<meta name="keywords" content="SK Sinha, Python Tools, PDF Password Cracker, PDF Locker, QR Generator, IIT Madras Student, Bihar Developer, Python Web Apps">
-<meta name="author" content="SK Sinha 342">
-<meta name="robots" content="index, follow">
-
-<meta property="og:type" content="website">
-<meta property="og:url" content="https://sksinha342.vercel.app/">
-<meta property="og:title" content="SK Sinha's Python Tool Hub">
-<meta property="og:description" content="Free and powerful Python utility tools for everyday tasks. Created by SK Sinha.">
-<meta property="og:image" content="./static/img/footer.jpg">
-
-<meta property="twitter:card" content="summary_large_image">
-<meta property="twitter:url" content="https://sksinha342.vercel.app/">
-<meta property="twitter:title" content="SK Sinha's Python Tool Hub">
-<meta property="twitter:description" content="Free and powerful Python utility tools for everyday tasks.">
-<meta property="twitter:image" content="./static/img/footer.jpg">
-<meta name="google-site-verification" content="ykY1td8McWwbVeCroq_KKPkpclhoGWbFp5pDqqOH7l0" />
-<link rel="canonical" href="https://sksinha342.vercel.app/">
+    <meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
+    <meta name="description" content="Explore advanced Python tools by SK Sinha. PDF Password Recovery, QR Generator, PDF Locker, and more utility tools for developers.">
+    <meta name="keywords" content="SK Sinha, Python Tools, PDF Password Cracker, PDF Locker, QR Generator, IIT Madras Student, Bihar Developer, Python Web Apps">
+    <meta name="author" content="SK Sinha 342">
+    <meta name="robots" content="index, follow">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sksinha342.vercel.app/">
+    <meta property="og:title" content="SK Sinha's Python Tool Hub">
+    <meta property="og:description" content="Free and powerful Python utility tools for everyday tasks. Created by SK Sinha.">
+    <meta property="og:image" content="./static/img/footer.jpg">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://sksinha342.vercel.app/">
+    <meta property="twitter:title" content="SK Sinha's Python Tool Hub">
+    <meta property="twitter:description" content="Free and powerful Python utility tools for everyday tasks.">
+    <meta property="twitter:image" content="./static/img/footer.jpg">
+    <link rel="canonical" href="https://sksinha342.vercel.app/">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background: #f4f7f6; display: flex; flex-direction: column; min-height: 100vh; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+        }
+        
+        body { 
+            background: #f4f7f6; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
 
         /* --- Header Styling --- */
         .header {
-            width: 100%; background: #333; color: white; padding: 10px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            position: sticky; top: 0; z-index: 1000;
+            width: 100%; 
+            background: linear-gradient(135deg, #1a4d3c, #0d2e23);
+            color: white; 
+            padding: 12px 20px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .header h1 { font-size: 18px; margin: 0; }
-        .menu-icon { font-size: 24px; cursor: pointer; }
+        
+        .header h1 { 
+            font-size: clamp(14px, 4vw, 18px); 
+            margin: 0; 
+        }
+        
+        .menu-icon { 
+            font-size: 24px; 
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .menu-icon:hover {
+            transform: scale(1.1);
+        }
 
         /* --- Search Bar --- */
-        .search-container { padding: 20px; text-align: center; background: white; }
+        .search-container { 
+            padding: 20px; 
+            text-align: center; 
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
         #toolSearch {
-            width: 80%; max-width: 400px; padding: 10px 15px;
-            border-radius: 25px; border: 1px solid #ddd; outline: none;
+            width: 80%; 
+            max-width: 400px; 
+            padding: 12px 20px;
+            border-radius: 25px; 
+            border: 1px solid #ddd; 
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        #toolSearch:focus {
+            border-color: #1a4d3c;
+            box-shadow: 0 0 5px rgba(26,77,60,0.3);
         }
 
         /* --- Navigation --- */
         .nav-container {
-            display: none; position: fixed; top: 50px; right: 15px;
-            background: #1a4d3c; padding: 15px; border-radius: 10px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); z-index: 1001;
+            display: none; 
+            position: fixed; 
+            top: 60px; 
+            right: 15px;
+            background: #1a4d3c; 
+            padding: 15px; 
+            border-radius: 10px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2); 
+            z-index: 1001;
+            min-width: 180px;
         }
-        .nav-links { list-style: none; }
-        .nav-links li { padding: 8px 0; border-bottom: 1px solid #2a5d4c; }
-        .nav-links a { color: white; text-decoration: none; font-size: 14px; }
-        .close-btn { color: white; cursor: pointer; float: right; margin-bottom: 10px; }
+        
+        .nav-links { 
+            list-style: none; 
+            margin-top: 20px;
+        }
+        
+        .nav-links li { 
+            padding: 10px 0; 
+            border-bottom: 1px solid #2a5d4c; 
+        }
+        
+        .nav-links a { 
+            color: white; 
+            text-decoration: none; 
+            font-size: 14px;
+            display: block;
+            transition: padding-left 0.2s;
+        }
+        
+        .nav-links a:hover {
+            padding-left: 5px;
+        }
+        
+        .close-btn { 
+            color: white; 
+            cursor: pointer; 
+            float: right; 
+            font-size: 18px;
+        }
 
         /* --- Breadcrumb --- */
-        .breadcrumb { padding: 10px 20px; font-size: 12px; color: #666; text-align: left; }
-        .breadcrumb a { text-decoration: none; color: #007bff; }
+        .breadcrumb { 
+            padding: 12px 20px; 
+            font-size: 12px; 
+            color: #666; 
+            text-align: left;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .breadcrumb a { 
+            text-decoration: none; 
+            color: #1a4d3c; 
+            font-weight: 500;
+        }
 
-        /* --- Tool Cards --- */
+        /* --- Tool Cards - FIXED HEIGHT --- */
         .container { 
-    flex: 1; 
-    display: grid; 
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
-    gap: 20px; 
-    padding: 20px; 
-}
+            flex: 1; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; 
+            padding: 30px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        /* Desktop Mode mein bhi fixed height */
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 0 0 15px 0;
+            text-decoration: none; 
+            color: #333; 
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            transition: all 0.3s ease;
+            border: 1px solid #eee;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100%;  /* Important: Card ki height fixed nahi, flexible */
+            min-height: 320px; /* Minimum height */
+            max-height: 380px; /* Maximum height - isse zyada nahi badhega */
+        }
+        
+        /* Image Wrapper - Fixed Height */
+        .card-img-wrapper {
+            width: 100%;
+            height: 180px;  /* Fixed height for all devices */
+            overflow: hidden;
+            background: #f0f0f0;
+            position: relative;
+        }
+        
+        .card img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover;
+            object-position: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover img {
+            transform: scale(1.05);
+        }
+        
+        .card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.12); 
+            border-color: #ff00dd; 
+        }
+        
+        .card h3 { 
+            font-size: 16px; 
+            color: #333; 
+            margin: 12px 15px 5px 15px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        
+        .card p { 
+            font-size: 12px; 
+            color: #777; 
+            line-height: 1.4;
+            margin: 0 15px 10px 15px;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .card-footer {
+            margin-top: auto;
+            padding: 8px 15px;
+            color: #ff00dd;
+            font-weight: bold;
+            font-size: 11px;
+            border-top: 1px solid #eee;
+            background: #fafafa;
+        }
+        
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+                padding: 20px 15px;
+            }
+            
+            .card {
+                min-height: 350px;
+                max-height: 400px;
+            }
+            
+            .card-img-wrapper {
+                height: 160px;
+            }
+            
+            .card h3 {
+                font-size: 15px;
+                margin: 10px 12px 3px 12px;
+            }
+            
+            .card p {
+                font-size: 11px;
+                margin: 0 12px 8px 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                padding: 15px;
+            }
+            
+            .card {
+                min-height: 280px;
+                max-height: 330px;
+            }
+            
+            .card-img-wrapper {
+                height: 150px;
+            }
+        }
+        
+        /* Desktop Mode (when user requests desktop site on mobile) */
+        @media (min-width: 1024px) {
+            .container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 25px;
+            }
+            
+            .card {
+                min-height: 370px;
+                max-height: 400px;
+            }
+            
+            .card-img-wrapper {
+                height: 180px;
+            }
+        }
+        
+        /* For very large screens */
+        @media (min-width: 1400px) {
+            .container {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
 
-.card { 
-    background: white; 
-    border-radius: 12px; 
-    padding: 15px; 
-    text-decoration: none; 
-    color: #333; 
-    text-align: center;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
-    transition: 0.3s;
-    border: 1px solid #eee;
-    overflow: hidden; /* Taaki image bahar na nikle */
-}
-
-.card:hover { 
-    transform: translateY(-5px); 
-    box-shadow: 0 8px 16px rgba(0,0,0,0.1); 
-    border-color: #ff00dd; 
-}
-
-/* --- Image Fix Logic --- */
-.card img { 
-    width: 100%; 
-    height: 200px; 
-    object-fit: cover; /* Image stretch nahi hogi, center se crop hogi */
-    object-position: center; /* Center part dikhega */
-    margin-bottom: 8px; 
-    border-radius: 8px; 
-}
-
-.card h3 { 
-    font-size: 16px; 
-    color: #333; 
-    margin: 10px 0 5px 0; 
-}
-
-.card p { 
-    font-size: 12px; 
-    color: #777; 
-    line-height: 1.4; 
-    height: 34px; /* Fixed height taaki cards ek barabar dikhein */
-    overflow: hidden;
-}
         /* --- Footer Styling --- */
-        footer { text-align: center; padding: 20px; background: white; border-top: 1px solid #ddd; margin-top: auto; }
-        .profile-pic { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; }
-        .info-text { font-size: 10px; font-weight: bold; margin-top: 5px; }
-        .social-section { padding: 15px; }
-        .social-icon { font-size: 22px; margin: 0 8px; text-decoration: none; }
-        .facebook { color: #1877F2; } .twitter { color: #1DA1F2; } .instagram { color: #C13584; }
-        .youtube { color: #FF0000; } .whatsapp { color: #25D366; }
-        .map-icon { width: 35px; vertical-align: middle; }
-        .footer-links { display: flex; justify-content: center; gap: 10px; font-size: 14px; margin-top: 10px; }
-        .footer-links a { text-decoration: none; color: blue; font-weight: bold; }
-        .copyright-section { color: red; font-size: 11px; margin-top: 10px; }
+        footer { 
+            text-align: center; 
+            padding: 25px 20px; 
+            background: white; 
+            border-top: 1px solid #ddd; 
+            margin-top: auto;
+        }
+        
+        .profile-pic { 
+            width: 70px; 
+            height: 70px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+        }
+        
+        .info-text { 
+            font-size: 10px; 
+            font-weight: bold; 
+            margin-top: 5px; 
+        }
+        
+        .social-section { 
+            padding: 15px; 
+        }
+        
+        .social-icon { 
+            font-size: 24px; 
+            margin: 0 10px; 
+            text-decoration: none;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        
+        .social-icon:hover {
+            transform: translateY(-3px);
+        }
+        
+        .facebook { color: #1877F2; } 
+        .twitter { color: #1DA1F2; } 
+        .instagram { color: #C13584; }
+        .youtube { color: #FF0000; } 
+        .whatsapp { color: #25D366; }
+        
+        .map-icon { 
+            width: 35px; 
+            vertical-align: middle; 
+        }
+        
+        .footer-links { 
+            display: flex; 
+            justify-content: center; 
+            gap: 20px; 
+            font-size: 13px; 
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-links a { 
+            text-decoration: none; 
+            color: #1a4d3c; 
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        
+        .footer-links a:hover {
+            color: #ff00dd;
+        }
+        
+        .copyright-section { 
+            color: #999; 
+            font-size: 11px; 
+            margin-top: 15px;
+        }
+        
+        /* Hide class for search */
+        .card.hide {
+            display: none;
+        }
+        
+        /* No results message */
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            grid-column: 1 / -1;
+        }
     </style>
 </head>
 <body>
@@ -149,26 +421,29 @@
     <div class="breadcrumb" id="breadcrumb"></div>
 
     <section class="search-container">
-        <input type="text" id="toolSearch" placeholder="Search tools..." onkeyup="filterTools()">
+        <input type="text" id="toolSearch" placeholder="🔍 Search tools..." onkeyup="filterTools()">
     </section>
 
     <div class="container" id="toolContainer">
         {% for tool in tools %}
-        <a href="{{ tool.url }}" class="card">
-            <img src="{{ url_for('static', filename=tool.img) }}" alt="icon">
-            <h3>{{ tool.title }}</h3>
-            <p>{{ tool.desc }}</p>
-            <div style="margin-top:10px; color:#ff00dd; font-weight:bold; font-size:11px;">Open Tool →</div>
-        </a>
+            {% if tool.url != '/seo' %}
+            <a href="{{ tool.url }}" class="card">
+                <div class="card-img-wrapper">
+                    <img src="{{ url_for('static', filename=tool.img) }}" alt="{{ tool.title }}"
+                         onerror="this.src='https://via.placeholder.com/300x180?text=No+Image'">
+                </div>
+                <h3>{{ tool.title }}</h3>
+                <p>{{ tool.desc }}</p>
+                <div class="card-footer">Open Tool →</div>
+            </a>
+            {% endif %}
         {% endfor %}
     </div>
 
     <footer>
-      
-
         <div class="social-section">
             <a target="blank" href="https://maps.app.goo.gl/7cGzYsyLUVj4GLmx9" class="social-icon">
-                <img class="map-icon" src="https://sksinha342.free.nf/_image/map2.png">
+                <img class="map-icon" src="https://sksinha342.free.nf/_image/map2.png" alt="Map">
             </a><br>
             <a target="blank" href="https://www.facebook.com/profile.php?id=100055694790984" class="social-icon facebook"><i class="fab fa-facebook"></i></a>
             <a target="blank" href="https://x.com/SK_Sinha_342" class="social-icon twitter"><i class="fab fa-twitter"></i></a>
@@ -197,17 +472,67 @@
         function filterTools() {
             let input = document.getElementById('toolSearch').value.toLowerCase();
             let cards = document.getElementsByClassName('card');
+            let hasResults = false;
+            
             for (let i = 0; i < cards.length; i++) {
                 let title = cards[i].getElementsByTagName('h3')[0].innerText.toLowerCase();
-                cards[i].style.display = title.includes(input) ? "block" : "none";
+                let desc = cards[i].getElementsByTagName('p')[0].innerText.toLowerCase();
+                
+                if (title.includes(input) || desc.includes(input)) {
+                    cards[i].classList.remove('hide');
+                    hasResults = true;
+                } else {
+                    cards[i].classList.add('hide');
+                }
+            }
+            
+            // Show no results message
+            let container = document.getElementById('toolContainer');
+            let existingMsg = document.getElementById('noResultsMsg');
+            
+            if (!hasResults && input !== "") {
+                if (!existingMsg) {
+                    let msgDiv = document.createElement('div');
+                    msgDiv.id = 'noResultsMsg';
+                    msgDiv.className = 'no-results';
+                    msgDiv.innerHTML = '🔍 No tools found matching "' + input + '"';
+                    container.appendChild(msgDiv);
+                } else {
+                    existingMsg.style.display = 'block';
+                    existingMsg.innerHTML = '🔍 No tools found matching "' + input + '"';
+                }
+            } else if (existingMsg) {
+                existingMsg.style.display = 'none';
             }
         }
-
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            var menu = document.getElementById('navContainer');
+            var menuIcon = document.querySelector('.menu-icon');
+            
+            if (menu.style.display === 'block' && 
+                !menu.contains(event.target) && 
+                !menuIcon.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+        
+        // Generate breadcrumb
         function generateBreadcrumb() {
-            let breadcrumbHTML = '<a href="/">Home</a> > Tools Hub';
+            let breadcrumbHTML = '<a href="/">🏠 Home</a> > 📚 Tools Hub';
             document.getElementById("breadcrumb").innerHTML = breadcrumbHTML;
         }
         generateBreadcrumb();
+        
+        // Handle window resize for responsive behavior
+        window.addEventListener('resize', function() {
+            // Force reflow for cards if needed
+            let cards = document.getElementsByClassName('card');
+            for (let card of cards) {
+                card.style.height = 'auto';
+            }
+        });
     </script>
 </body>
 </html>
