@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Smart Rank List Generator - SK Sinha Tools</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e90ff, #0066cc);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        /* Content */
+        .content {
+            padding: 30px;
+        }
+
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #1e90ff;
+            box-shadow: 0 0 5px rgba(30,144,255,0.3);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e90ff, #0066cc);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573, #00a852);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #cc0033);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa502, #cc7a00);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c5ce7;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-card i {
+            font-size: 2rem;
+            color: #1e90ff;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-card .label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 30px;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #1e90ff, #0066cc);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .grade-Aplus { background: #4CAF50; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+        .grade-A { background: #8BC34A; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+        .grade-Bplus { background: #FFC107; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+        .grade-B { background: #FF9800; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+        .grade-C { background: #FF5722; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+        .grade-F { background: #F44336; color: white; border-radius: 20px; padding: 4px 8px; display: inline-block; }
+
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; font-weight: bold; }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A9A9A9); color: white; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #B8860B); color: white; }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                justify-content: center;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-trophy"></i> Smart Rank List Generator</h1>
+            <p>Create professional rank lists with grades, download PDF/Excel, and analyze results</p>
+        </div>
+
+        <div class="content">
+            <div id="alert" class="alert"></div>
+
+            <div class="two-columns">
+                <div>
+                    <div class="form-group">
+                        <label><i class="fas fa-school"></i> School/Institute Name</label>
+                        <input type="text" id="school" placeholder="e.g., Delhi Public School">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-graduation-cap"></i> Class/Exam Name</label>
+                        <input type="text" id="class" placeholder="e.g., Class 10 Final Exam">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Exam Title (Optional)</label>
+                        <input type="text" id="exam_name" placeholder="e.g., Annual Examination 2024">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-chart-line"></i> Maximum Score</label>
+                        <input type="number" id="max_score" value="100" placeholder="100">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><i class="fas fa-users"></i> Student Data</label>
+                <textarea id="data" placeholder="Enter student names and scores (comma-separated)&#10;Example: Raj Kumar-95, Priya Singh-88, Amit Patel-76, Neha Gupta-92"></textarea>
+                <div class="help-text">
+                    <i class="fas fa-info-circle"></i> Format: Name-Score (separate multiple entries with commas)
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateRankList()">
+                    <i class="fas fa-magic"></i> Generate Rank List
+                </button>
+                <button class="btn btn-success" onclick="downloadPDF()" id="downloadPdfBtn" disabled>
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </button>
+                <button class="btn btn-danger" onclick="downloadExcel()" id="downloadExcelBtn" disabled>
+                    <i class="fas fa-file-excel"></i> Download Excel
+                </button>
+                <button class="btn btn-secondary" onclick="resetForm()">
+                    <i class="fas fa-undo"></i> Reset
+                </button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div id="stats" style="display: none;">
+                <div class="stats-grid" id="statsGrid"></div>
+            </div>
+
+            <!-- Result Table -->
+            <div id="resultSection" style="display: none;">
+                <h3><i class="fas fa-list"></i> Rank List</h3>
+                <div class="table-wrapper">
+                    <table id="rankTable">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Name</th>
+                                <th>Score</th>
+                                <th>Percentage</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let currentData = null;
+
+        function showAlert(message, type) {
+            const alert = $('#alert');
+            alert.removeClass('alert-success alert-error');
+            alert.addClass(`alert-${type}`);
+            alert.html(`<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`);
+            alert.show();
+            setTimeout(() => alert.fadeOut(), 5000);
+        }
+
+        function getGradeClass(grade) {
+            const gradeMap = {
+                'A+': 'grade-Aplus',
+                'A': 'grade-A',
+                'B+': 'grade-Bplus',
+                'B': 'grade-B',
+                'C': 'grade-C',
+                'F': 'grade-F'
+            };
+            return gradeMap[grade] || 'grade-F';
+        }
+
+        function getRankClass(rank) {
+            if (rank === 1) return 'rank-1';
+            if (rank === 2) return 'rank-2';
+            if (rank === 3) return 'rank-3';
+            return '';
+        }
+
+        function generateRankList() {
+            const school = $('#school').val();
+            const className = $('#class').val();
+            const examName = $('#exam_name').val();
+            const maxScore = $('#max_score').val();
+            const data = $('#data').val();
+
+            if (!school || !className || !data) {
+                showAlert('Please fill all required fields!', 'error');
+                return;
+            }
+
+            // Show loading on button
+            const btn = $('.btn-primary');
+            const originalText = btn.html();
+            btn.html('<span class="spinner"></span> Generating...');
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: '/ranklist',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'generate',
+                    school: school,
+                    class: className,
+                    exam_name: examName,
+                    max_score: maxScore,
+                    data: data
+                }),
+                success: function(response) {
+                    if (response.success) {
+                        currentData = response;
+                        displayResults(response);
+                        showAlert('Rank list generated successfully!', 'success');
+                        $('#downloadPdfBtn, #downloadExcelBtn').prop('disabled', false);
+                    } else {
+                        showAlert('Error generating rank list', 'error');
+                    }
+                },
+                error: function() {
+                    showAlert('Server error. Please try again.', 'error');
+                },
+                complete: function() {
+                    btn.html(originalText);
+                    btn.prop('disabled', false);
+                }
+            });
+        }
+
+        function displayResults(data) {
+            // Display stats
+            $('#stats').show();
+            const statsHtml = `
+                <div class="stat-card">
+                    <i class="fas fa-users"></i>
+                    <div class="value">${data.total_students}</div>
+                    <div class="label">Total Students</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-chart-line"></i>
+                    <div class="value">${data.average_score}</div>
+                    <div class="label">Average Score</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-trophy"></i>
+                    <div class="value">${data.highest_score}</div>
+                    <div class="label">Highest Score</div>
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-star"></i>
+                    <div class="value">${data.lowest_score}</div>
+                    <div class="label">Lowest Score</div>
+                </div>
+            `;
+            $('#statsGrid').html(statsHtml);
+
+            // Display table
+            $('#resultSection').show();
+            let tableHtml = '';
+            data.entries.forEach(entry => {
+                const rankClass = getRankClass(entry.rank);
+                const gradeClass = getGradeClass(entry.grade);
+                tableHtml += `
+                    <tr>
+                        <td class="${rankClass}"><strong>${entry.rank}</strong></td>
+                        <td><strong>${entry.name}</strong></td>
+                        <td>${entry.score}/${data.max_score}</td>
+                        <td>${entry.percentage}%</td>
+                        <td><span class="${gradeClass}">${entry.grade}</span></td>
+                    </tr>
+                `;
+            });
+            $('#tableBody').html(tableHtml);
+        }
+
+        function downloadPDF() {
+            if (!currentData) {
+                showAlert('Please generate rank list first!', 'error');
+                return;
+            }
+
+            const btn = $('#downloadPdfBtn');
+            const originalText = btn.html();
+            btn.html('<span class="spinner"></span> Generating PDF...');
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: '/ranklist',
+                method: 'POST',
+                data: { action: 'download_pdf' },
+                xhrFields: { responseType: 'blob' },
+                success: function(blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rank_list_${Date.now()}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showAlert('PDF downloaded successfully!', 'success');
+                },
+                error: function() {
+                    showAlert('Error generating PDF', 'error');
+                },
+                complete: function() {
+                    btn.html(originalText);
+                    btn.prop('disabled', false);
+                }
+            });
+        }
+
+        function downloadExcel() {
+            if (!currentData) {
+                showAlert('Please generate rank list first!', 'error');
+                return;
+            }
+
+            const btn = $('#downloadExcelBtn');
+            const originalText = btn.html();
+            btn.html('<span class="spinner"></span> Generating Excel...');
+            btn.prop('disabled', true);
+
+            $.ajax({
+                url: '/ranklist',
+                method: 'POST',
+                data: { action: 'download_excel' },
+                xhrFields: { responseType: 'blob' },
+                success: function(blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `rank_list_${Date.now()}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    showAlert('Excel file downloaded successfully!', 'success');
+                },
+                error: function() {
+                    showAlert('Error generating Excel file', 'error');
+                },
+                complete: function() {
+                    btn.html(originalText);
+                    btn.prop('disabled', false);
+                }
+            });
+        }
+
+        function resetForm() {
+            $('#school, #class, #exam_name, #data').val('');
+            $('#max_score').val('100');
+            $('#stats, #resultSection').hide();
+            $('#downloadPdfBtn, #downloadExcelBtn').prop('disabled', true);
+            currentData = null;
+            showAlert('Form reset successfully!', 'success');
+        }
+
+        // Example data for demo
+        function loadExample() {
+            $('#school').val('Delhi Public School');
+            $('#class').val('Class 10');
+            $('#exam_name').val('Annual Examination 2024');
+            $('#max_score').val('100');
+            $('#data').val('Raj Kumar-95, Priya Singh-88, Amit Patel-76, Neha Gupta-92, Suresh Yadav-67, Ritu Kumari-84');
+        }
+
+        // Load example on page load
+        $(document).ready(function() {
+            loadExample();
+        });
+    </script>
+</body>
+</html>
