@@ -2,209 +2,849 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Scanner: Image & PDF</title>
-    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Pro Scanner - Perspective Correction Tool</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: auto; background: #242424; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #canvas-container { position: relative; margin: 20px auto; border: 1px solid #333; display: inline-block; background: #000; overflow: hidden; line-height: 0; }
-        canvas { max-width: 100%; display: block; }
-        .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; padding: 15px; background: #333; border-radius: 10px; margin-bottom: 20px; }
-        .input-group { display: flex; flex-direction: column; align-items: center; }
-        label { font-size: 12px; margin-bottom: 5px; color: #aaa; }
-        input { padding: 8px; border-radius: 5px; border: 1px solid #444; background: #1a1a1a; color: white; text-align: center; }
-        
-        .btn-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-        button { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
-        .btn-reset { background: #57606f; grid-column: span 2; }
-        .btn-img { background: #2ed573; }
-        .btn-pdf { background: #ff4757; }
-        button:hover { opacity: 0.9; transform: scale(0.98); }
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        .dot { position: absolute; width: 16px; height: 16px; background: #1e90ff; border-radius: 50%; border: 2px solid white; transform: translate(-50%, -50%); cursor: move; z-index: 10; display: none; }
-        .mid-dot { background: #ffa502; width: 12px; height: 12px; z-index: 5; }
-        
-        #filename { width: 100%; box-sizing: border-box; margin-bottom: 10px; border: 1px solid #1e90ff; padding: 10px; font-size: 16px; }
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 12px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #1a1a1a;
+            border-radius: 24px;
+            padding: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 1.5rem;
+            text-align: center;
+            background: linear-gradient(135deg, #1e90ff, #00c6fb);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Upload Area */
+        .upload-area {
+            background: #252525;
+            border: 2px dashed #3a3a3a;
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 16px;
+        }
+
+        .upload-area.drag-active {
+            border-color: #1e90ff;
+            background: #2a2a3a;
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+        }
+
+        .upload-text {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        /* Canvas Container */
+        .canvas-wrapper {
+            position: relative;
+            margin: 16px 0;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            background: #111;
+            border: 1px solid #333;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            cursor: grab;
+            touch-action: none;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            background: #252525;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .control-item {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .control-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+        .control-item input, .control-item select {
+            width: 100%;
+            padding: 10px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:active {
+            transform: scale(0.97);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1e90ff, #0066cc);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #2ed573, #00a852);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757, #cc0033);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa502, #cc7a00);
+        }
+
+        .btn-secondary {
+            background: #3a3a3a;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            background: #252525;
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .preview-title {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 12px;
+        }
+
+        .preview-canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            background: #0a0a0a;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .container { padding: 12px; }
+            button { padding: 10px 12px; font-size: 0.8rem; }
+            .control-item { min-width: 80px; }
+        }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color: #1e90ff;">Document Toolkit</h2>
-    <input type="file" id="upload" accept="image/*" style="margin-bottom: 15px; width: 100%;">
+    <h2>📄 Pro Scanner</h2>
 
-    <div id="canvas-container">
-        <canvas id="editorCanvas"></canvas>
-        <div id="p0" class="dot"></div><div id="p1" class="dot"></div>
-        <div id="p2" class="dot"></div><div id="p3" class="dot"></div>
-        <div id="m0" class="dot mid-dot"></div><div id="m1" class="dot mid-dot"></div>
-        <div id="m2" class="dot mid-dot"></div><div id="m3" class="dot mid-dot"></div>
+    <!-- Upload Area -->
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📸</div>
+        <div class="upload-text">Click or Drag & Drop Image Here</div>
+        <div class="upload-text" style="font-size: 0.7rem; margin-top: 5px;">PNG, JPG, WebP supported</div>
+        <input type="file" id="fileInput" accept="image/*">
     </div>
 
-    <div class="controls">
-        <button class="btn-reset" onclick="resetPoints()">Reset to Full Screen</button>
-        <div class="input-group">
-            <label>Rotation (°)</label>
-            <input type="number" id="rotateInput" value="0" style="width: 70px;">
+    <!-- Canvas Area -->
+    <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-panel">
+        <div class="control-group">
+            <div class="control-item">
+                <label>🎯 Output Format</label>
+                <select id="outputFormat">
+                    <option value="jpeg">JPEG (Small Size)</option>
+                    <option value="png">PNG (Lossless)</option>
+                    <option value="webp">WebP (Best Compression)</option>
+                </select>
+            </div>
+            <div class="control-item">
+                <label>📦 Target Size (KB)</label>
+                <input type="number" id="targetKB" placeholder="Auto" step="50" min="10">
+            </div>
+            <div class="control-item">
+                <label>🔄 Quality (1-100)</label>
+                <input type="number" id="quality" value="90" min="1" max="100" step="5">
+            </div>
         </div>
-        <div class="input-group">
-            <label>Target KB</label>
-            <input type="number" id="targetKb" placeholder="Max KB">
+
+        <div class="button-group">
+            <button id="resetBtn" class="btn-warning">⟳ Reset Points</button>
+            <button id="downloadImgBtn" class="btn-success">💾 Save as Image</button>
+            <button id="downloadPdfBtn" class="btn-danger">📑 Save as PDF</button>
+        </div>
+        <div class="button-group">
+            <button id="copyBtn" class="btn-secondary">📋 Copy to Clipboard</button>
+            <button id="newImageBtn" class="btn-secondary">🔄 New Image</button>
         </div>
     </div>
 
-    <div style="text-align: left; background: #333; padding: 15px; border-radius: 10px;">
-        <label>File Name (No extension needed):</label>
-        <input type="text" id="filename" value="document_1">
-        
-        <div class="btn-box">
-            <button class="btn-img" onclick="processFile('jpg')">SAVE AS IMAGE (.jpg)</button>
-            <button class="btn-pdf" onclick="processFile('pdf')">SAVE AS PDF (.pdf)</button>
+    <!-- Preview Section -->
+    <div class="preview-section">
+        <div class="preview-title">✨ Live Preview (Corrected)</div>
+        <div class="preview-canvas-wrapper">
+            <canvas id="previewCanvas" width="300" height="300" style="width:100%; height:auto; max-width:300px"></canvas>
         </div>
     </div>
 </div>
 
 <script>
-    const canvas = document.getElementById('editorCanvas');
+    // ========== DOM Elements ==========
+    const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    const cornerDots = [document.getElementById('p0'), document.getElementById('p1'), document.getElementById('p2'), document.getElementById('p3')];
-    const midDots = [document.getElementById('m0'), document.getElementById('m1'), document.getElementById('m2'), document.getElementById('m3')];
-    const allDots = [...cornerDots, ...midDots];
+    const previewCanvas = document.getElementById('previewCanvas');
+    const previewCtx = previewCanvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
     
-    let img = new Image();
-    let points = [];
+    // ========== State Variables ==========
+    let currentImage = null;        // HTML Image Element
+    let originalWidth = 0, originalHeight = 0;
+    let canvasWidth = 0, canvasHeight = 0;
     let isImageLoaded = false;
-
-    document.getElementById('upload').onchange = function(e) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            img.onload = function() {
-                const name = e.target.files[0].name.split('.').slice(0, -1).join('.');
-                document.getElementById('filename').value = name;
-                
-                canvas.width = img.width > 800 ? 800 : img.width;
-                canvas.height = (img.height / img.width) * canvas.width;
-                
-                isImageLoaded = true;
-                // Dots show karein
-                allDots.forEach(d => d.style.display = 'block');
-                resetPoints();
-            }
-            img.src = event.target.result;
-        }
-        reader.readAsDataURL(e.target.files[0]);
-    };
-
-    function resetPoints() {
-        if(!isImageLoaded) return;
-        points = [
-            {x: 20, y: 20}, {x: canvas.width-20, y: 20},
-            {x: canvas.width-20, y: canvas.height-20}, {x: 0, y: canvas.height-20}
-        ];
-        updateUI();
-    }
-
-    function updateUI() {
-        points.forEach((p, i) => {
-            cornerDots[i].style.left = p.x + 'px';
-            cornerDots[i].style.top = p.y + 'px';
-        });
-        
-        const midCoords = [
-            {x: (points[0].x + points[1].x)/2, y: (points[0].y + points[1].y)/2},
-            {x: (points[1].x + points[2].x)/2, y: (points[1].y + points[2].y)/2},
-            {x: (points[2].x + points[3].x)/2, y: (points[2].y + points[3].y)/2},
-            {x: (points[3].x + points[0].x)/2, y: (points[3].y + points[0].y)/2}
-        ];
-
-        midCoords.forEach((m, i) => {
-            midDots[i].style.left = m.x + 'px';
-            midDots[i].style.top = m.y + 'px';
-        });
-        draw();
-    }
-
-    // Drag Logic
-    cornerDots.forEach((dot, index) => {
-        dot.onmousedown = function(e) {
-            e.preventDefault();
-            document.onmousemove = function(e2) {
-                const rect = canvas.getBoundingClientRect();
-                points[index].x = Math.max(0, Math.min(canvas.width, e2.clientX - rect.left));
-                points[index].y = Math.max(0, Math.min(canvas.height, e2.clientY - rect.top));
-                updateUI();
-            };
-            document.onmouseup = () => document.onmousemove = null;
-        };
-    });
-
-    midDots.forEach((dot, index) => {
-        dot.onmousedown = function(e) {
-            e.preventDefault();
-            let pA = index, pB = (index + 1) % 4;
-            document.onmousemove = function(e2) {
-                const rect = canvas.getBoundingClientRect();
-                let dx = (e2.clientX - rect.left) - (points[pA].x + points[pB].x)/2;
-                let dy = (e2.clientY - rect.top) - (points[pA].y + points[pB].y)/2;
-                [pA, pB].forEach(i => {
-                    points[i].x = Math.max(0, Math.min(canvas.width, points[i].x + dx));
-                    points[i].y = Math.max(0, Math.min(canvas.height, points[i].y + dy));
-                });
-                updateUI();
-            };
-            document.onmouseup = () => document.onmousemove = null;
-        };
-    });
-
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        
-        // Sirf tab draw karein jab image loaded ho
-        if(isImageLoaded) {
-            ctx.beginPath();
-            ctx.lineWidth = 2; ctx.strokeStyle = "#1e90ff";
-            ctx.moveTo(points[0].x, points[0].y);
-            points.forEach(p => ctx.lineTo(p.x, p.y));
-            ctx.closePath(); ctx.stroke();
-        }
-    }
-
-    function processFile(format) {
-    if(!isImageLoaded) return alert("Pehle image select karein!");
     
-    const filename = document.getElementById('filename').value || "doc";
-    const targetKb = document.getElementById('targetKb').value;
-    const rotate = document.getElementById('rotateInput').value;
-
-    // --- STEP 1: Blue lines hatao sirf download ke liye ---
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    // --- STEP 2: Ab image capture karein ---
-    canvas.toBlob((blob) => {
-        const formData = new FormData();
-        formData.append('image', blob);
-        formData.append('points', JSON.stringify(points));
-        formData.append('rotate', rotate);
-        formData.append('target_kb', targetKb);
-        formData.append('as_pdf', format === 'pdf' ? 'true' : 'false');
-
-        fetch('/doclike', { method: 'POST', body: formData })
-        .then(res => res.blob())
-        .then(downloadBlob => {
-            const url = window.URL.createObjectURL(downloadBlob);
+    // 4 Corner Points (Normalized: 0-1 relative to original image)
+    let points = [
+        { x: 0.1, y: 0.1 },
+        { x: 0.9, y: 0.1 },
+        { x: 0.9, y: 0.9 },
+        { x: 0.1, y: 0.9 }
+    ];
+    
+    let draggingPoint = -1;
+    let canvasRect = null;
+    let previewTimeout = null;
+    
+    // ========== Helper Functions ==========
+    function updateCanvasSize() {
+        if (!currentImage) return;
+        const wrapper = document.getElementById('canvasWrapper');
+        const maxWidth = Math.min(wrapper.clientWidth - 20, window.innerWidth - 40);
+        const maxHeight = window.innerHeight - 350;
+        
+        let scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight, 1.5);
+        scale = Math.max(scale, 0.3);
+        
+        canvasWidth = originalWidth * scale;
+        canvasHeight = originalHeight * scale;
+        
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+    }
+    
+    function drawCanvas() {
+        if (!currentImage || !isImageLoaded) return;
+        
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.drawImage(currentImage, 0, 0, canvasWidth, canvasHeight);
+        
+        // Draw perspective lines
+        ctx.beginPath();
+        ctx.strokeStyle = '#1e90ff';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 0;
+        
+        for (let i = 0; i < 4; i++) {
+            const p1 = points[i];
+            const p2 = points[(i + 1) % 4];
+            const x1 = p1.x * canvasWidth;
+            const y1 = p1.y * canvasHeight;
+            const x2 = p2.x * canvasWidth;
+            const y2 = p2.y * canvasHeight;
+            
+            if (i === 0) ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Draw control points
+        points.forEach((point, idx) => {
+            const x = point.x * canvasWidth;
+            const y = point.y * canvasHeight;
+            
+            ctx.fillStyle = draggingPoint === idx ? '#ff4757' : '#ffffff';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.fillStyle = '#1e90ff';
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+    }
+    
+    // ========== Perspective Transform (Core Logic) ==========
+    function getPerspectiveTransform(src, dst) {
+        // src and dst are arrays of 4 points {x, y}
+        const A = [];
+        const B = [];
+        
+        for (let i = 0; i < 4; i++) {
+            A.push([src[i].x, src[i].y, 1, 0, 0, 0, -dst[i].x * src[i].x, -dst[i].x * src[i].y]);
+            A.push([0, 0, 0, src[i].x, src[i].y, 1, -dst[i].y * src[i].x, -dst[i].y * src[i].y]);
+            B.push(dst[i].x);
+            B.push(dst[i].y);
+        }
+        
+        // Solve using Gaussian elimination
+        function gaussianElimination(matrix, rhs) {
+            const n = matrix.length;
+            const augmented = matrix.map((row, i) => [...row, rhs[i]]);
+            
+            for (let i = 0; i < n; i++) {
+                let maxRow = i;
+                for (let j = i + 1; j < n; j++) {
+                    if (Math.abs(augmented[j][i]) > Math.abs(augmented[maxRow][i])) maxRow = j;
+                }
+                [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+                
+                const pivot = augmented[i][i];
+                if (Math.abs(pivot) < 1e-8) continue;
+                
+                for (let k = i; k <= n; k++) {
+                    augmented[i][k] /= pivot;
+                }
+                
+                for (let j = 0; j < n; j++) {
+                    if (j !== i && Math.abs(augmented[j][i]) > 1e-8) {
+                        const factor = augmented[j][i];
+                        for (let k = i; k <= n; k++) {
+                            augmented[j][k] -= factor * augmented[i][k];
+                        }
+                    }
+                }
+            }
+            
+            return augmented.map(row => row[n]);
+        }
+        
+        const H = gaussianElimination(A, B);
+        H.push(1);
+        return H;
+    }
+    
+    function applyMatrix(H, x, y) {
+        const denominator = H[6] * x + H[7] * y + 1;
+        const u = (H[0] * x + H[1] * y + H[2]) / denominator;
+        const v = (H[3] * x + H[4] * y + H[5]) / denominator;
+        return { x: u, y: v };
+    }
+    
+    function bilinearInterpolate(imageData, x, y) {
+        const w = imageData.width;
+        const h = imageData.height;
+        const x0 = Math.floor(x);
+        const y0 = Math.floor(y);
+        const x1 = Math.min(x0 + 1, w - 1);
+        const y1 = Math.min(y0 + 1, h - 1);
+        
+        const fx = x - x0;
+        const fy = y - y0;
+        
+        function getPixel(px, py) {
+            const idx = (py * w + px) * 4;
+            return {
+                r: imageData.data[idx],
+                g: imageData.data[idx + 1],
+                b: imageData.data[idx + 2],
+                a: imageData.data[idx + 3]
+            };
+        }
+        
+        const p00 = getPixel(x0, y0);
+        const p10 = getPixel(x1, y0);
+        const p01 = getPixel(x0, y1);
+        const p11 = getPixel(x1, y1);
+        
+        const r = Math.round(p00.r * (1 - fx) * (1 - fy) + p10.r * fx * (1 - fy) + p01.r * (1 - fx) * fy + p11.r * fx * fy);
+        const g = Math.round(p00.g * (1 - fx) * (1 - fy) + p10.g * fx * (1 - fy) + p01.g * (1 - fx) * fy + p11.g * fx * fy);
+        const b = Math.round(p00.b * (1 - fx) * (1 - fy) + p10.b * fx * (1 - fy) + p01.b * (1 - fx) * fy + p11.b * fx * fy);
+        
+        return { r, g, b };
+    }
+    
+    function perspectiveTransform(points, outWidth, outHeight) {
+        const srcCorners = [
+            { x: 0, y: 0 },
+            { x: outWidth, y: 0 },
+            { x: outWidth, y: outHeight },
+            { x: 0, y: outHeight }
+        ];
+        
+        const dstCorners = points.map(p => ({
+            x: p.x * originalWidth,
+            y: p.y * originalHeight
+        }));
+        
+        const H = getPerspectiveTransform(srcCorners, dstCorners);
+        
+        // Create temporary canvas with original image
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = originalWidth;
+        tempCanvas.height = originalHeight;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.drawImage(currentImage, 0, 0);
+        const imgData = tempCtx.getImageData(0, 0, originalWidth, originalHeight);
+        
+        // Output canvas
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = outWidth;
+        outCanvas.height = outHeight;
+        const outCtx = outCanvas.getContext('2d');
+        const outData = outCtx.createImageData(outWidth, outHeight);
+        
+        for (let y = 0; y < outHeight; y++) {
+            for (let x = 0; x < outWidth; x++) {
+                const srcPos = applyMatrix(H, x, y);
+                if (srcPos.x >= 0 && srcPos.x < originalWidth - 1 && srcPos.y >= 0 && srcPos.y < originalHeight - 1) {
+                    const color = bilinearInterpolate(imgData, srcPos.x, srcPos.y);
+                    const idx = (y * outWidth + x) * 4;
+                    outData.data[idx] = color.r;
+                    outData.data[idx + 1] = color.g;
+                    outData.data[idx + 2] = color.b;
+                    outData.data[idx + 3] = 255;
+                } else {
+                    const idx = (y * outWidth + x) * 4;
+                    outData.data[idx] = 255;
+                    outData.data[idx + 1] = 255;
+                    outData.data[idx + 2] = 255;
+                    outData.data[idx + 3] = 255;
+                }
+            }
+        }
+        
+        outCtx.putImageData(outData, 0, 0);
+        return outCanvas;
+    }
+    
+    function updatePreview() {
+        if (!currentImage || !isImageLoaded) return;
+        
+        if (previewTimeout) clearTimeout(previewTimeout);
+        previewTimeout = setTimeout(() => {
+            try {
+                // Calculate output size (keep aspect ratio based on perspective)
+                const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
+                const width = Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2));
+                const height = Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2));
+                
+                const previewSize = 250;
+                let outW, outH;
+                if (width > height) {
+                    outW = previewSize;
+                    outH = Math.round(previewSize * height / width);
+                } else {
+                    outH = previewSize;
+                    outW = Math.round(previewSize * width / height);
+                }
+                
+                const corrected = perspectiveTransform(points, outW, outH);
+                previewCanvas.width = previewSize;
+                previewCanvas.height = previewSize;
+                previewCtx.fillStyle = '#1a1a1a';
+                previewCtx.fillRect(0, 0, previewSize, previewSize);
+                const offsetX = (previewSize - outW) / 2;
+                const offsetY = (previewSize - outH) / 2;
+                previewCtx.drawImage(corrected, offsetX, offsetY, outW, outH);
+            } catch(e) {
+                console.error('Preview error:', e);
+            }
+        }, 150);
+    }
+    
+    // ========== Image Loading ==========
+    function loadImage(file) {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Please select a valid image file');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                currentImage = img;
+                originalWidth = img.width;
+                originalHeight = img.height;
+                isImageLoaded = true;
+                
+                updateCanvasSize();
+                resetPoints();
+                drawCanvas();
+                updatePreview();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+    
+    function resetPoints() {
+        points = [
+            { x: 0.1, y: 0.1 },
+            { x: 0.9, y: 0.1 },
+            { x: 0.9, y: 0.9 },
+            { x: 0.1, y: 0.9 }
+        ];
+        drawCanvas();
+        updatePreview();
+    }
+    
+    // ========== Download with Size Control ==========
+    async function getCorrectedBlob(format, quality, targetKB) {
+        return new Promise(async (resolve) => {
+            const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
+            const width = Math.round(Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2)));
+            const height = Math.round(Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2)));
+            
+            const correctedCanvas = perspectiveTransform(points, Math.max(width, 1), Math.max(height, 1));
+            
+            let mimeType = 'image/jpeg';
+            let ext = 'jpg';
+            if (format === 'png') { mimeType = 'image/png'; ext = 'png'; }
+            if (format === 'webp') { mimeType = 'image/webp'; ext = 'webp'; }
+            
+            let finalQuality = quality / 100;
+            
+            if (targetKB && targetKB > 10) {
+                // Binary search for quality to hit target size
+                let low = 0.1, high = 1.0;
+                let bestBlob = null;
+                
+                for (let i = 0; i < 8; i++) {
+                    const testQuality = (low + high) / 2;
+                    const blob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, testQuality));
+                    if (blob.size / 1024 > targetKB) {
+                        high = testQuality;
+                    } else {
+                        low = testQuality;
+                        bestBlob = blob;
+                    }
+                }
+                resolve(bestBlob || await new Promise(res => correctedCanvas.toBlob(res, mimeType, finalQuality)));
+            } else {
+                correctedCanvas.toBlob(resolve, mimeType, finalQuality);
+            }
+        });
+    }
+    
+    async function downloadAsImage() {
+        if (!currentImage) { alert('Please load an image first'); return; }
+        
+        const btn = document.getElementById('downloadImgBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Processing...';
+        btn.disabled = true;
+        
+        try {
+            const format = document.getElementById('outputFormat').value;
+            const quality = parseInt(document.getElementById('quality').value) || 90;
+            const targetKB = parseInt(document.getElementById('targetKB').value) || null;
+            
+            const blob = await getCorrectedBlob(format, quality, targetKB);
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename + (format === 'pdf' ? ".pdf" : ".jpg");
+            a.download = `scanned_document.${format === 'jpeg' ? 'jpg' : format}`;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch(e) {
+            alert('Error: ' + e.message);
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    async function downloadAsPDF() {
+        if (!currentImage) { alert('Please load an image first'); return; }
+        
+        const btn = document.getElementById('downloadPdfBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Generating PDF...';
+        btn.disabled = true;
+        
+        try {
+            const quality = parseInt(document.getElementById('quality').value) || 90;
+            const targetKB = parseInt(document.getElementById('targetKB').value) || null;
             
-            // --- STEP 3: Download ke baad wapas blue lines dikhao ---
-            updateUI(); 
+            const blob = await getCorrectedBlob('jpeg', quality, targetKB);
+            const imgUrl = URL.createObjectURL(blob);
+            
+            const img = new Image();
+            img.onload = async () => {
+                const { jsPDF } = window.jspdf;
+                let pdf;
+                if (img.width > img.height) {
+                    pdf = new jsPDF('landscape', 'mm', [img.width * 0.264583, img.height * 0.264583]);
+                } else {
+                    pdf = new jsPDF('portrait', 'mm', [img.width * 0.264583, img.height * 0.264583]);
+                }
+                
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (img.height * pdfWidth) / img.width;
+                
+                pdf.addImage(imgUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('scanned_document.pdf');
+                URL.revokeObjectURL(imgUrl);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            };
+            img.src = imgUrl;
+        } catch(e) {
+            alert('PDF Error: ' + e.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    async function copyToClipboard() {
+        if (!currentImage) { alert('Please load an image first'); return; }
+        
+        const btn = document.getElementById('copyBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner"></span> Copying...';
+        btn.disabled = true;
+        
+        try {
+            const blob = await getCorrectedBlob('png', 90, null);
+            await navigator.clipboard.write([
+                new ClipboardItem({ 'image/png': blob })
+            ]);
+            btn.innerHTML = '✅ Copied!';
+            setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500);
+        } catch(e) {
+            alert('Failed to copy: ' + e.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    // ========== Mouse/Touch Interactions ==========
+    function getCanvasCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        let clientX, clientY;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        let x = (clientX - rect.left) * scaleX;
+        let y = (clientY - rect.top) * scaleY;
+        x = Math.max(0, Math.min(canvas.width, x));
+        y = Math.max(0, Math.min(canvas.height, y));
+        return { x, y };
+    }
+    
+    function handleStart(e) {
+        e.preventDefault();
+        if (!currentImage) return;
+        
+        const { x, y } = getCanvasCoords(e);
+        let minDist = 30;
+        draggingPoint = -1;
+        
+        points.forEach((point, idx) => {
+            const px = point.x * canvasWidth;
+            const py = point.y * canvasHeight;
+            const dist = Math.hypot(x - px, y - py);
+            if (dist < minDist) {
+                minDist = dist;
+                draggingPoint = idx;
+            }
         });
-    }, 'image/jpeg', 0.95);
-}
+    }
+    
+    function handleMove(e) {
+        if (draggingPoint === -1 || !currentImage) return;
+        e.preventDefault();
+        
+        const { x, y } = getCanvasCoords(e);
+        points[draggingPoint] = {
+            x: x / canvasWidth,
+            y: y / canvasHeight
+        };
+        drawCanvas();
+        updatePreview();
+    }
+    
+    function handleEnd() {
+        draggingPoint = -1;
+    }
+    
+    // ========== Event Listeners ==========
+    canvas.addEventListener('mousedown', handleStart);
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    
+    canvas.addEventListener('touchstart', handleStart, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('touchend', handleEnd);
+    
+    document.getElementById('resetBtn').addEventListener('click', resetPoints);
+    document.getElementById('downloadImgBtn').addEventListener('click', downloadAsImage);
+    document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
+    document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
+    document.getElementById('newImageBtn').addEventListener('click', () => {
+        fileInput.click();
+    });
+    
+    // Upload handling
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files[0]) loadImage(e.target.files[0]);
+    });
+    
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    // Drag & Drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-active');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-active');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-active');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) loadImage(file);
+        else alert('Please drop an image file');
+    });
+    
+    window.addEventListener('resize', () => {
+        if (currentImage) {
+            updateCanvasSize();
+            drawCanvas();
+            updatePreview();
+        }
+    });
+    
+    // Quality change triggers preview update
+    document.getElementById('quality').addEventListener('change', () => updatePreview());
+    document.getElementById('outputFormat').addEventListener('change', () => updatePreview());
 </script>
 </body>
 </html>
