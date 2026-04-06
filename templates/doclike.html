@@ -226,6 +226,103 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Custom Confirmation Dialog */
+        .confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-dialog {
+            background: #252525;
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 350px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            animation: slideUp 0.2s ease;
+        }
+
+        .confirm-dialog h3 {
+            color: #1e90ff;
+            margin-bottom: 16px;
+        }
+
+        .confirm-dialog .size-info {
+            background: #1a1a1a;
+            padding: 12px;
+            border-radius: 12px;
+            margin: 16px 0;
+        }
+
+        .confirm-dialog .original-size {
+            color: #ffa502;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .confirm-dialog .new-size {
+            color: #2ed573;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .confirm-dialog .saved {
+            color: #2ed573;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .confirm-dialog .increased {
+            color: #ff4757;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .confirm-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-confirm {
+            background: #2ed573;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #ff4757;
+            color: white;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
         /* Mobile Optimizations */
         @media (max-width: 600px) {
             body { padding: 8px; }
@@ -241,7 +338,7 @@
 <div class="container">
     <h2>📄 Pro Scanner</h2>
 
-    <!-- Simple File Input - No Drag & Drop -->
+    <!-- Simple File Input -->
     <input type="file" id="upload" accept="image/*">
 
     <!-- Canvas Area -->
@@ -252,7 +349,6 @@
     <!-- Controls -->
     <div class="controls-panel">
         <div class="control-group">
-            
             <div class="control-item">
                 <label>🎯 Output Format</label>
                 <select id="outputFormat">
@@ -313,6 +409,7 @@
     let isImageLoaded = false;
     let currentRotation = 0;
     let originalImageData = null;
+    let originalFileSizeKB = 0;
     
     // 4 Corner Points (Normalized: 0-1 relative to original image)
     let points = [
@@ -610,6 +707,8 @@
             return;
         }
         
+        originalFileSizeKB = file.size / 1024;
+        
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -642,7 +741,58 @@
         updatePreview();
     }
     
-    // ========== Download Functions ==========
+    // ========== Download with Confirmation ==========
+    function showConfirmDialog(originalSize, newSize, downloadCallback) {
+        // Remove any existing overlay
+        const existingOverlay = document.querySelector('.confirm-overlay');
+        if (existingOverlay) existingOverlay.remove();
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        
+        const saved = originalSize - newSize;
+        const isCompressed = saved > 0;
+        const savedPercent = ((saved / originalSize) * 100).toFixed(1);
+        
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <h3>📊 Download Confirmation</h3>
+                <div class="size-info">
+                    <div style="margin-bottom: 8px;">📁 Original Size:</div>
+                    <div class="original-size">${originalSize.toFixed(1)} KB</div>
+                    <div style="margin: 12px 0 8px 0;">✨ New Size:</div>
+                    <div class="new-size">${newSize.toFixed(1)} KB</div>
+                    ${isCompressed ? 
+                        `<div class="saved">✅ Saved: ${saved.toFixed(1)} KB (${savedPercent}% smaller)</div>` : 
+                        `<div class="increased">⚠️ Increased: ${Math.abs(saved).toFixed(1)} KB (${Math.abs(savedPercent)}% larger)</div>`
+                    }
+                </div>
+                <div class="confirm-buttons">
+                    <button class="btn-confirm" id="confirmDownload">✓ Download</button>
+                    <button class="btn-cancel" id="cancelDownload">✗ Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        document.getElementById('confirmDownload').onclick = () => {
+            overlay.remove();
+            downloadCallback();
+        };
+        
+        document.getElementById('cancelDownload').onclick = () => {
+            overlay.remove();
+        };
+        
+        // Close on overlay click
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+            }
+        };
+    }
+    
     async function getCorrectedBlob(format, quality, targetKB) {
         return new Promise(async (resolve) => {
             const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
@@ -692,14 +842,20 @@
             const targetKB = parseInt(document.getElementById('targetKB').value) || null;
             
             const blob = await getCorrectedBlob(format, quality, targetKB);
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `scanned_document.${format === 'jpeg' ? 'jpg' : format}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            const newSizeKB = blob.size / 1024;
+            
+            // Show confirmation dialog
+            showConfirmDialog(originalFileSizeKB, newSizeKB, () => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scanned_document.${format === 'jpeg' ? 'jpg' : format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
         } catch(e) {
             alert('Error: ' + e.message);
         } finally {
@@ -721,28 +877,36 @@
             const targetKB = parseInt(document.getElementById('targetKB').value) || null;
             
             const blob = await getCorrectedBlob('jpeg', quality, targetKB);
-            const imgUrl = URL.createObjectURL(blob);
+            const newSizeKB = blob.size / 1024;
             
-            const img = new Image();
-            img.onload = async () => {
-                const { jsPDF } = window.jspdf;
-                let pdf;
-                if (img.width > img.height) {
-                    pdf = new jsPDF('landscape', 'mm', [img.width * 0.264583, img.height * 0.264583]);
-                } else {
-                    pdf = new jsPDF('portrait', 'mm', [img.width * 0.264583, img.height * 0.264583]);
-                }
-                
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (img.height * pdfWidth) / img.width;
-                
-                pdf.addImage(imgUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save('scanned_document.pdf');
-                URL.revokeObjectURL(imgUrl);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            };
-            img.src = imgUrl;
+            // Show confirmation dialog
+            showConfirmDialog(originalFileSizeKB, newSizeKB, () => {
+                const imgUrl = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    const { jsPDF } = window.jspdf;
+                    let pdf;
+                    if (img.width > img.height) {
+                        pdf = new jsPDF('landscape', 'mm', [img.width * 0.264583, img.height * 0.264583]);
+                    } else {
+                        pdf = new jsPDF('portrait', 'mm', [img.width * 0.264583, img.height * 0.264583]);
+                    }
+                    
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = (img.height * pdfWidth) / img.width;
+                    
+                    pdf.addImage(imgUrl, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                    pdf.save('scanned_document.pdf');
+                    URL.revokeObjectURL(imgUrl);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                };
+                img.src = imgUrl;
+            });
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
         } catch(e) {
             alert('PDF Error: ' + e.message);
             btn.innerHTML = originalText;
@@ -820,9 +984,6 @@
     document.getElementById('resetBtn').addEventListener('click', resetPoints);
     document.getElementById('downloadImgBtn').addEventListener('click', downloadAsImage);
     document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
-    document.getElementById('newImageBtn').addEventListener('click', () => {
-        fileInput.click();
-    });
     
     document.getElementById('rotateLeft90').addEventListener('click', () => {
         if (currentImage) rotateImage(-90);
@@ -832,12 +993,11 @@
         if (currentImage) rotateImage(90);
     });
     
-    // ========== Simple File Input Handler ==========
+    // Simple File Input Handler
     fileInput.addEventListener('change', function(e) {
         if (e.target.files && e.target.files[0]) {
             loadImage(e.target.files[0]);
         }
-        // Reset so same file can be selected again
         fileInput.value = '';
     });
     
