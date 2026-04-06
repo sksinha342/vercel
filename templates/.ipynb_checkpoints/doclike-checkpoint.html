@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pro Scanner: Image & PDF</title>
+    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
         .container { max-width: 900px; margin: auto; background: #242424; padding: 20px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -98,8 +99,8 @@
     function resetPoints() {
         if(!isImageLoaded) return;
         points = [
-            {x: 0, y: 0}, {x: canvas.width, y: 0},
-            {x: canvas.width, y: canvas.height}, {x: 0, y: canvas.height}
+            {x: 20, y: 20}, {x: canvas.width-20, y: 20},
+            {x: canvas.width-20, y: canvas.height-20}, {x: 0, y: canvas.height-20}
         ];
         updateUI();
     }

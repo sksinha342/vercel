@@ -99,8 +99,8 @@
     function resetPoints() {
         if(!isImageLoaded) return;
         points = [
-            {x: 0, y: 0}, {x: canvas.width, y: 0},
-            {x: canvas.width, y: canvas.height}, {x: 0, y: canvas.height}
+            {x: 20, y: 20}, {x: canvas.width-20, y: 20},
+            {x: canvas.width-20, y: canvas.height-20}, {x: 0, y: canvas.height-20}
         ];
         updateUI();
     }
