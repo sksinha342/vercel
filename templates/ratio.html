@@ -23,8 +23,41 @@
         .btn-primary { background: #3498db; }
         .btn-download { background: #27ae60; width: 100%; font-size: 18px; margin-top: 20px; height: 50px; }
         button:hover { opacity: 0.8; transform: translateY(-1px); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
         #customRatioInputs { display: none; margin-top: 10px; background: #3d3d3d; padding: 10px; border-radius: 5px; border-left: 4px solid #27ae60; }
+        
+        .status-bar {
+            margin-top: 15px;
+            padding: 10px;
+            background: #2d2d2d;
+            border-radius: 5px;
+            font-size: 12px;
+            display: none;
+        }
+        
+        .status-bar.show {
+            display: block;
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .success { color: #27ae60; }
+        .info { color: #3498db; }
     </style>
 </head>
 <body>
@@ -72,14 +105,19 @@
 
         <div class="control-item">
             <label>Target Size (KB)</label>
-            <input type="number" id="targetKb" placeholder="e.g. 50">
+            <input type="number" id="targetKb" placeholder="e.g. 50 or 500">
+            <small style="color: #888;">Leave empty for default quality</small>
         </div>
     </div>
 
     <div style="margin-top: 20px;">
         <label>Filename (Edit before download):</label>
         <input type="text" id="filename" style="width: 100%; margin-top: 8px;">
-        <button class="btn-download" id="downloadBtn">Download Edited Image</button>
+        <button class="btn-download" id="downloadBtn">💾 Download Edited Image</button>
+    </div>
+    
+    <div class="status-bar" id="statusBar">
+        <div id="statusMessage"></div>
     </div>
 </div>
 
@@ -89,11 +127,31 @@
     const image = document.getElementById('image');
     const rotateInput = document.getElementById('rotateDeg');
     const customUI = document.getElementById('customRatioInputs');
-
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statusBar = document.getElementById('statusBar');
+    const statusMessage = document.getElementById('statusMessage');
+    const targetKbInput = document.getElementById('targetKb');
+    
+    let currentFile = null;
+    
+    function showStatus(message, type = 'info') {
+        statusMessage.innerHTML = message;
+        statusBar.classList.add('show');
+        setTimeout(() => {
+            statusBar.classList.remove('show');
+        }, 3000);
+    }
+    
     document.getElementById('upload').onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            document.getElementById('filename').value = file.name;
+            currentFile = file;
+            document.getElementById('filename').value = file.name.replace(/\.[^/.]+$/, '');
+            
+            // Show original size
+            const sizeKB = (file.size / 1024).toFixed(1);
+            showStatus(`📸 Image loaded: ${sizeKB} KB | Format: ${file.type.split('/')[1].toUpperCase()}`, 'info');
+            
             const reader = new FileReader();
             reader.onload = (event) => {
                 image.src = event.target.result;
@@ -103,74 +161,122 @@
             reader.readAsDataURL(file);
         }
     };
-
+    
     function initCropper(ratio) {
         cropper = new Cropper(image, {
-            aspectRatio: ratio,
+            aspectRatio: isNaN(ratio) ? NaN : ratio,
             viewMode: 1,
             autoCropArea: 0.8,
             checkOrientation: false
         });
     }
-
+    
     // Ratio Switch Logic
     document.getElementById('ratioSelect').onchange = function() {
         if (this.value === 'custom') {
             customUI.style.display = 'block';
         } else {
             customUI.style.display = 'none';
-            cropper.setAspectRatio(parseFloat(this.value));
+            const ratio = parseFloat(this.value);
+            if (!isNaN(ratio)) {
+                cropper.setAspectRatio(ratio);
+            } else {
+                cropper.setAspectRatio(NaN);
+            }
         }
     };
-
+    
     // User Custom Ratio Apply
     function setCustomRatio() {
         const w = parseFloat(document.getElementById('ratioW').value);
         const h = parseFloat(document.getElementById('ratioH').value);
         if (w > 0 && h > 0) {
             cropper.setAspectRatio(w / h);
+            showStatus(`✅ Aspect ratio set to ${w}:${h}`, 'success');
         } else {
             alert("Please enter valid Width and Height");
         }
     }
-
+    
     function adjRotate(val) {
         rotateInput.value = (parseInt(rotateInput.value) + val + 360) % 360;
         cropper.rotateTo(rotateInput.value);
     }
-
+    
     document.getElementById('rotateDeg').onchange = function() {
         cropper.rotateTo(this.value);
     };
-
-    document.getElementById('downloadBtn').onclick = () => {
-    if (!cropper) return alert("Upload an image first!");
     
-    const canvas = cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' });
-    const targetKb = document.getElementById('targetKb').value;
-    const filename = document.getElementById('filename').value;
-
-    canvas.toBlob((blob) => {
-
-        const formData = new FormData();
-        formData.append('image', blob, "image.jpg");
-        formData.append('target_kb', targetKb);
-
-        fetch('/resize', { method: 'POST', body: formData })
-        .then(res => res.blob())
-        .then(downloadBlob => {
-
+    downloadBtn.onclick = async () => {
+        if (!cropper) {
+            alert("Upload an image first!");
+            return;
+        }
+        
+        const targetKb = targetKbInput.value;
+        const filename = document.getElementById('filename').value || "edited_image";
+        
+        // Show loading state
+        const originalText = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '<span class="spinner"></span> Processing...';
+        downloadBtn.disabled = true;
+        
+        try {
+            // Get cropped canvas
+            const canvas = cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' });
+            
+            // Convert canvas to blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+            
+            // Show compression info
+            const originalSizeKB = (blob.size / 1024).toFixed(1);
+            showStatus(`🔄 Processing: Original ${originalSizeKB} KB → Target ${targetKb || 'Auto'} KB`, 'info');
+            
+            // Send to server for smart compression
+            const formData = new FormData();
+            formData.append('image', blob, "image.jpg");
+            formData.append('target_kb', targetKb);
+            
+            const response = await fetch('/resize', { method: 'POST', body: formData });
+            
+            if (!response.ok) {
+                throw new Error('Server error');
+            }
+            
+            const downloadBlob = await response.blob();
+            const finalSizeKB = (downloadBlob.size / 1024).toFixed(1);
+            
+            // Download file
             const url = window.URL.createObjectURL(downloadBlob);
-
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename || "edited.jpg";
+            a.download = `${filename}.jpg`;
+            document.body.appendChild(a);
             a.click();
-
-        });
-
-    }, 'image/jpeg', 0.95);
-};
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            // Show success message
+            if (targetKb) {
+                const diff = Math.abs(finalSizeKB - targetKb);
+                if (diff <= targetKb * 0.1) {
+                    showStatus(`✅ Success! Size: ${finalSizeKB} KB (Target: ${targetKb} KB)`, 'success');
+                } else {
+                    showStatus(`⚠️ Size: ${finalSizeKB} KB (Target: ${targetKb} KB) - Close enough!`, 'info');
+                }
+            } else {
+                showStatus(`✅ Downloaded! Final size: ${finalSizeKB} KB`, 'success');
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error processing image: ' + error.message);
+            showStatus('❌ Error processing image', 'error');
+        } finally {
+            downloadBtn.innerHTML = originalText;
+            downloadBtn.disabled = false;
+        }
+    };
 </script>
 </body>
 </html>
