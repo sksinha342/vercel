@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Pro Scanner - Perspective Correction Tool</title>
     <style>
         * {
@@ -38,35 +39,32 @@
             color: transparent;
         }
 
-        /* Upload Area */
-        .upload-area {
+        /* Simple File Input */
+        #upload {
+            width: 100%;
+            padding: 12px;
             background: #252525;
-            border: 2px dashed #3a3a3a;
-            border-radius: 16px;
-            padding: 20px;
-            text-align: center;
+            border: 1px solid #3a3a3a;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.3s ease;
             margin-bottom: 16px;
         }
 
-        .upload-area.drag-active {
-            border-color: #1e90ff;
-            background: #2a2a3a;
+        #upload::-webkit-file-upload-button {
+            background: #1e90ff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 12px;
         }
 
-        .upload-icon {
-            font-size: 2.5rem;
-            margin-bottom: 8px;
-        }
-
-        .upload-text {
-            color: #aaa;
-            font-size: 0.9rem;
-        }
-
-        #fileInput {
-            display: none;
+        #upload::-webkit-file-upload-button:hover {
+            background: #0066cc;
         }
 
         /* Canvas Container */
@@ -243,13 +241,8 @@
 <div class="container">
     <h2>📄 Pro Scanner</h2>
 
-    <!-- Upload Area -->
-    <div class="upload-area" id="uploadArea">
-        <div class="upload-icon">📸</div>
-        <div class="upload-text">Click or Drag & Drop Image Here</div>
-        <div class="upload-text" style="font-size: 0.7rem; margin-top: 5px;">PNG, JPG, WebP supported</div>
-        <input type="file" id="fileInput" accept="image/*">
-    </div>
+    <!-- Simple File Input - No Drag & Drop -->
+    <input type="file" id="upload" accept="image/*">
 
     <!-- Canvas Area -->
     <div class="canvas-wrapper" id="canvasWrapper">
@@ -259,6 +252,7 @@
     <!-- Controls -->
     <div class="controls-panel">
         <div class="control-group">
+            
             <div class="control-item">
                 <label>🎯 Output Format</label>
                 <select id="outputFormat">
@@ -277,14 +271,21 @@
             </div>
         </div>
 
+        <!-- Rotation Controls -->
+        <div class="control-group">
+            <div class="control-item">
+                <label>🔄 Rotate Image</label>
+                <div style="display: flex; gap: 8px;">
+                    <button id="rotateLeft90" class="btn-secondary" style="flex: 1;">↺ 90°</button>
+                    <button id="rotateRight90" class="btn-secondary" style="flex: 1;">↻ 90°</button>
+                </div>
+            </div>
+        </div>
+
         <div class="button-group">
             <button id="resetBtn" class="btn-warning">⟳ Reset Points</button>
             <button id="downloadImgBtn" class="btn-success">💾 Save as Image</button>
             <button id="downloadPdfBtn" class="btn-danger">📑 Save as PDF</button>
-        </div>
-        <div class="button-group">
-            <button id="copyBtn" class="btn-secondary">📋 Copy to Clipboard</button>
-            <button id="newImageBtn" class="btn-secondary">🔄 New Image</button>
         </div>
     </div>
 
@@ -303,14 +304,15 @@
     const ctx = canvas.getContext('2d');
     const previewCanvas = document.getElementById('previewCanvas');
     const previewCtx = previewCanvas.getContext('2d');
-    const fileInput = document.getElementById('fileInput');
-    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('upload');
     
     // ========== State Variables ==========
-    let currentImage = null;        // HTML Image Element
+    let currentImage = null;
     let originalWidth = 0, originalHeight = 0;
     let canvasWidth = 0, canvasHeight = 0;
     let isImageLoaded = false;
+    let currentRotation = 0;
+    let originalImageData = null;
     
     // 4 Corner Points (Normalized: 0-1 relative to original image)
     let points = [
@@ -321,7 +323,6 @@
     ];
     
     let draggingPoint = -1;
-    let canvasRect = null;
     let previewTimeout = null;
     
     // ========== Helper Functions ==========
@@ -386,9 +387,51 @@
         ctx.shadowBlur = 0;
     }
     
-    // ========== Perspective Transform (Core Logic) ==========
+    // ========== Rotation Functions ==========
+    function rotateImage(degrees) {
+        if (!currentImage || !isImageLoaded) return;
+        
+        currentRotation = (currentRotation + degrees) % 360;
+        if (currentRotation < 0) currentRotation += 360;
+        
+        const rotatedCanvas = document.createElement('canvas');
+        const angleRad = (currentRotation * Math.PI) / 180;
+        const sin = Math.abs(Math.sin(angleRad));
+        const cos = Math.abs(Math.cos(angleRad));
+        
+        const newWidth = Math.floor(originalWidth * cos + originalHeight * sin);
+        const newHeight = Math.floor(originalWidth * sin + originalHeight * cos);
+        
+        rotatedCanvas.width = newWidth;
+        rotatedCanvas.height = newHeight;
+        
+        const rotatedCtx = rotatedCanvas.getContext('2d');
+        rotatedCtx.translate(newWidth / 2, newHeight / 2);
+        rotatedCtx.rotate(angleRad);
+        rotatedCtx.drawImage(currentImage, -originalWidth / 2, -originalHeight / 2);
+        
+        const rotatedImg = new Image();
+        rotatedImg.onload = () => {
+            currentImage = rotatedImg;
+            originalWidth = rotatedImg.width;
+            originalHeight = rotatedImg.height;
+            
+            points = [
+                { x: 0.1, y: 0.1 },
+                { x: 0.9, y: 0.1 },
+                { x: 0.9, y: 0.9 },
+                { x: 0.1, y: 0.9 }
+            ];
+            
+            updateCanvasSize();
+            drawCanvas();
+            updatePreview();
+        };
+        rotatedImg.src = rotatedCanvas.toDataURL();
+    }
+    
+    // ========== Perspective Transform Functions ==========
     function getPerspectiveTransform(src, dst) {
-        // src and dst are arrays of 4 points {x, y}
         const A = [];
         const B = [];
         
@@ -399,7 +442,6 @@
             B.push(dst[i].y);
         }
         
-        // Solve using Gaussian elimination
         function gaussianElimination(matrix, rhs) {
             const n = matrix.length;
             const augmented = matrix.map((row, i) => [...row, rhs[i]]);
@@ -427,7 +469,6 @@
                     }
                 }
             }
-            
             return augmented.map(row => row[n]);
         }
         
@@ -491,7 +532,6 @@
         
         const H = getPerspectiveTransform(srcCorners, dstCorners);
         
-        // Create temporary canvas with original image
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = originalWidth;
         tempCanvas.height = originalHeight;
@@ -499,7 +539,6 @@
         tempCtx.drawImage(currentImage, 0, 0);
         const imgData = tempCtx.getImageData(0, 0, originalWidth, originalHeight);
         
-        // Output canvas
         const outCanvas = document.createElement('canvas');
         outCanvas.width = outWidth;
         outCanvas.height = outHeight;
@@ -536,7 +575,6 @@
         if (previewTimeout) clearTimeout(previewTimeout);
         previewTimeout = setTimeout(() => {
             try {
-                // Calculate output size (keep aspect ratio based on perspective)
                 const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
                 const width = Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2));
                 const height = Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2));
@@ -580,6 +618,8 @@
                 originalWidth = img.width;
                 originalHeight = img.height;
                 isImageLoaded = true;
+                currentRotation = 0;
+                originalImageData = e.target.result;
                 
                 updateCanvasSize();
                 resetPoints();
@@ -602,7 +642,7 @@
         updatePreview();
     }
     
-    // ========== Download with Size Control ==========
+    // ========== Download Functions ==========
     async function getCorrectedBlob(format, quality, targetKB) {
         return new Promise(async (resolve) => {
             const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
@@ -612,14 +652,12 @@
             const correctedCanvas = perspectiveTransform(points, Math.max(width, 1), Math.max(height, 1));
             
             let mimeType = 'image/jpeg';
-            let ext = 'jpg';
-            if (format === 'png') { mimeType = 'image/png'; ext = 'png'; }
-            if (format === 'webp') { mimeType = 'image/webp'; ext = 'webp'; }
+            if (format === 'png') { mimeType = 'image/png'; }
+            if (format === 'webp') { mimeType = 'image/webp'; }
             
             let finalQuality = quality / 100;
             
             if (targetKB && targetKB > 10) {
-                // Binary search for quality to hit target size
                 let low = 0.1, high = 1.0;
                 let bestBlob = null;
                 
@@ -712,28 +750,6 @@
         }
     }
     
-    async function copyToClipboard() {
-        if (!currentImage) { alert('Please load an image first'); return; }
-        
-        const btn = document.getElementById('copyBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Copying...';
-        btn.disabled = true;
-        
-        try {
-            const blob = await getCorrectedBlob('png', 90, null);
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]);
-            btn.innerHTML = '✅ Copied!';
-            setTimeout(() => { btn.innerHTML = originalText; btn.disabled = false; }, 1500);
-        } catch(e) {
-            alert('Failed to copy: ' + e.message);
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-    
     // ========== Mouse/Touch Interactions ==========
     function getCanvasCoords(e) {
         const rect = canvas.getBoundingClientRect();
@@ -804,34 +820,25 @@
     document.getElementById('resetBtn').addEventListener('click', resetPoints);
     document.getElementById('downloadImgBtn').addEventListener('click', downloadAsImage);
     document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
-    document.getElementById('copyBtn').addEventListener('click', copyToClipboard);
     document.getElementById('newImageBtn').addEventListener('click', () => {
         fileInput.click();
     });
     
-    // Upload handling
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files[0]) loadImage(e.target.files[0]);
+    document.getElementById('rotateLeft90').addEventListener('click', () => {
+        if (currentImage) rotateImage(-90);
     });
     
-    uploadArea.addEventListener('click', () => fileInput.click());
-    
-    // Drag & Drop
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('drag-active');
+    document.getElementById('rotateRight90').addEventListener('click', () => {
+        if (currentImage) rotateImage(90);
     });
     
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('drag-active');
-    });
-    
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('drag-active');
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith('image/')) loadImage(file);
-        else alert('Please drop an image file');
+    // ========== Simple File Input Handler ==========
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files && e.target.files[0]) {
+            loadImage(e.target.files[0]);
+        }
+        // Reset so same file can be selected again
+        fileInput.value = '';
     });
     
     window.addEventListener('resize', () => {
@@ -842,7 +849,6 @@
         }
     });
     
-    // Quality change triggers preview update
     document.getElementById('quality').addEventListener('change', () => updatePreview());
     document.getElementById('outputFormat').addEventListener('change', () => updatePreview());
 </script>
