@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 import img2pdf
 import math
+import tempfile
 
 doclike_bp = Blueprint("doclike", __name__)
 
