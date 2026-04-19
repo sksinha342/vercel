@@ -1,49 +1,29 @@
 import os
+import io
 import uuid
 import random
-from flask import Blueprint, render_template, request, send_file, current_app
+from flask import Blueprint, render_template, request, send_file
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
-
-
-import threading
-import time
-
-def delete_file_after_delay(file_path, delay=60):
-    """60 सेकंड बाद फाइल डिलीट करने का फंक्शन"""
-    def delay_delete():
-        time.sleep(delay)
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                print(f"🗑️ Deleted temporary file: {file_path}")
-        except Exception as e:
-            print(f"❌ Error deleting file: {e}")
-
-    # बैकग्राउंड में थ्रेड चलाना ताकि यूजर को इंतज़ार न करना पड़े
-    threading.Thread(target=delay_delete, daemon=True).start()
-
-
-
-# 1. Blueprint Setup (मुख्य ऐप के साथ जोड़ने के लिए)
+# 1. Blueprint Setup
 form_eight_bp = Blueprint('form_eight', __name__)
 
-# टूल की जानकारी (मुख्य पेज पर दिखने के लिए)
 metadata = {
     "title": "OBC Form VIII Generator",
     "description": "Handwriting style Hindi form filler for OBC certificates.",
-    "image": "pages/form8.jpg" # अपनी इमेज का नाम दें
+    "image": "pages/form8.jpg"
 }
 
-BASE_IMAGE_PATH = "form_viii_base.jpg" # सुनिश्चित करें कि यह फ़ाइल मुख्य डायरेक्टरी में हो
+# --- सीधा पाथ (चूँकि सब कुछ Root में ही है) ---
+BASE_IMAGE_PATH = "form_viii_base.jpg"
 
 def get_hindi_font(size=28):
+    """फोंट्स को सीधे Root से उठाएगा"""
     font_paths = [
         "fonts/Kalam-Regular.ttf",
         "fonts/Mukta-Regular.ttf",
-        "C:/Windows/Fonts/Nirmala.ttf",
-        "C:/Windows/Fonts/Mangal.ttf",
+        "Kalam-Regular.ttf", # अगर सीधे बाहर रखा हो
         "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
     ]
     for path in font_paths:
@@ -93,7 +73,6 @@ def draw_handwriting(draw, text, x, y, font):
             current_x += 18
     return current_y + 38
 
-# 2. Routes (Blueprint का उपयोग करते हुए)
 @form_eight_bp.route('/form_eight')
 def index():
     return render_template('form_eight.html')
@@ -117,11 +96,12 @@ def generate():
         'signature': request.form.get('signature', ''),
     }
     
-    # मुख्य ऐप के अपलोड फोल्डर का रास्ता
-    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
-    os.makedirs(upload_folder, exist_ok=True)
+    # इमेज लोड (सीधे नाम से)
+    try:
+        img = Image.open(BASE_IMAGE_PATH).convert('RGBA')
+    except:
+        return f"Error: {BASE_IMAGE_PATH} nahi mili! Check karo ki file index.py ke saath hai ya nahi."
 
-    img = Image.open(BASE_IMAGE_PATH).convert('RGBA')
     draw = ImageDraw.Draw(img)
     default_font = get_hindi_font(28)
     
@@ -151,10 +131,10 @@ def generate():
     sign_text = data['signature'] if data['signature'] else "______________"
     draw_handwriting(draw, sign_text, 800, 1525, default_font)
     
+    # मेमोरी में सेव
+    img_io = io.BytesIO()
     final_img = img.convert('RGB')
-    output_filename = f"form_filled_{uuid.uuid4().hex}.jpg"
-    output_path = os.path.join(upload_folder, output_filename)
-    final_img.save(output_path, quality=40)
+    final_img.save(img_io, 'JPEG', quality=40)
+    img_io.seek(0)
     
-    delete_file_after_delay(output_path, delay=1060)
-    return send_file(output_path, as_attachment=True, download_name="OBC_Form_VIII_Filled.jpg")
+    return send_file(img_io, mimetype='image/jpeg', as_attachment=True, download_name="OBC_Form_VIII_Filled.jpg")
