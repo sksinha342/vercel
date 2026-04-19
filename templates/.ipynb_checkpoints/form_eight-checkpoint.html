@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <title>OBC Form VIII - Auto Fill</title>
+    <meta property="og:url" content="https://sksinha342.vercel.app/form_eight">
+    <meta property="og:image" content="https://res.cloudinary.com/dj1mpwooh/image/upload/v1776611237/stezownylm9oitlw0heu.jpg">
+    <meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
+    <meta name="description" content="Exprlore advanced python tools for rank list genrator.">
+    <meta name="keywords" content="SK Sinha 342, PDF Password Cracker, PDF Locker, QR Generator, Bihar Developer, ">
+    <meta property="og:title" content="Rank List Generator ">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="Python utility tools by SK Sinha.">
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://sksinha342.vercel.app/form_eight">
+    <meta property="twitter:title" content="Form 8 Auto Fill">
+    <meta property="twitter:description" content="Free and powerful Python utility tools for everyday tasks.">
+    <meta property="twitter:image" content="./static/pages/form8.jpg">
+    <link rel="canonical" href="https://sksinha342.vercel.app/form_eight">
+
+
+
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="author" content="SK Sinha 342">
+    <meta name="robots" content="index, follow">
+    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
+    
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Nirmala UI', 'Mangal', 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+        .container {
+            max-width: 750px;
+            margin: auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #1a472a;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .form-panel {
+            padding: 35px;
+        }
+        .field-group {
+            margin-bottom: 20px;
+        }
+        .row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #1a472a;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        input:focus {
+            border-color: #1a472a;
+            outline: none;
+        }
+        hr {
+            margin: 25px 0;
+            border: none;
+            border-top: 2px dashed #ccc;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #1a472a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #2d5a3a;
+        }
+        .info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 25px;
+            font-size: 13px;
+            border-left: 4px solid #1a472a;
+        }
+        @media (max-width: 600px) {
+            .row-2 {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            .form-panel {
+                padding: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 फॉर्म VIII - ऑटो फिल</h1>
+            <p>OBC (क्रीमीलेयर रहित) प्रमाणपत्र हेतु स्वयं शपथ-पत्र</p>
+        </div>
+        
+        <div class="form-panel">
+            <form action="form_eight/generate" method="post">
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>आवेदक का नाम</label>
+                        <input type="text" name="name" required value="Sujit Kumar">
+                    </div>
+                    <div class="field-group">
+                        <label>पिता का नाम</label>
+                        <input type="text" name="father_name" required value="Nand Kumar singh">
+                    </div>
+                </div>
+
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>गाँव / शहर</label>
+                        <input type="text" name="village" value="Kathar Khurd">
+                    </div>
+                    <div class="field-group">
+                        <label>पोस्ट ऑफिस</label>
+                        <input type="text" name="post_office" value="Chaukiya">
+                    </div>
+                </div>
+
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>थाना</label>
+                        <input type="text" name="thana" value="Krishna brahm">
+                    </div>
+                    <div class="field-group">
+                        <label>प्रखंड</label>
+                        <input type="text" name="block" value="Simari">
+                    </div>
+                </div>
+
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>अनुमंडल</label>
+                        <input type="text" name="subdivision" value="Dumraon">
+                    </div>
+                    <div class="field-group">
+                        <label>जिला</label>
+                        <input type="text" name="district" value="Buxar">
+                    </div>
+                </div>
+
+                <div class="row-2">
+                    <div class="field-group" value="">
+                        <label>राज्य</label>
+                        <input type="text" name="state" value="Bihar">
+                    </div>
+                    <div class="field-group">
+                        <label>जाति</label>
+                        <input type="text" name="caste" required value="Kushwaha">
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>💰 वार्षिक आय (वेतन से)</label>
+                        <input type="text" name="annual_income" value="शून्य">
+                    </div>
+                    <div class="field-group">
+                        <label>💰 कुल वार्षिक आय</label>
+                        <input type="text" name="total_income" value="एक लाख">
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row-2">
+                    <div class="field-group">
+                        <label>📅 दिनांक</label>
+                        <input type="text" name="date" value="15/04/2026">
+                    </div>
+                    <div class="field-group">
+                        <label>✍️ हस्ताक्षर (हिंदी में)</label>
+                        <input type="text" name="signature" value="Sujit Kumar">
+                    </div>
+                </div>
+
+                <button type="submit">✨ फॉर्म जनरेट करें</button>
+            </form>
+
+            <div class="info">
+                💡 <strong>निर्देश:</strong><br>
+                • सभी फील्ड्स हैंडराइटिंग स्टाइल में भरेंगे<br>
+                • सिर्फ आय वाले फील्ड्स साफ-साफ लिखे जाएंगे<br>
+                • डाउनलोड के बाद सीधा प्रिंट ले सकते हैं
+            </div>
+        </div>
+    </div>
+</body>
+</html>
