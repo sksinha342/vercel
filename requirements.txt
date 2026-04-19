@@ -6,8 +6,10 @@ cloudinary
 psycopg2-binary
 pikepdf
 opencv-python-headless
-numpy
 img2pdf
 reportlab
 openpyxl
 Werkzeug==3.0.0
+pyvips==2.2.1
+cffi==1.16.0
+numpy==1.26.2
