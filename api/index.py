@@ -1,69 +1,172 @@
-from flask import Flask, render_template
 import os
-import sys
-import importlib
+import io
+from flask import Flask, render_template_string, request, send_file
+from PIL import Image, ImageDraw, ImageFont
+from indic_unicode_reshaper import reshape
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
+app = Flask(__name__)
 
-app = Flask(__name__, 
-            template_folder=os.path.join(BASE_DIR, "templates"), 
-            static_folder=os.path.join(BASE_DIR, "static"))
+# --- Path Configuration for Vercel ---
+# Vercel mein api folder ke bahar files access karne ke liye
+def get_base_path():
+    # Vercel ke environment mein files root directory mein hoti hain
+    if os.path.exists('/var/task/form_viii_base.jpg'):  # Vercel Lambda path
+        return '/var/task'
+    elif os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'form_viii_base.jpg')):
+        return os.path.dirname(os.path.dirname(__file__))
+    else:
+        return os.getcwd()
 
-# IMPORTANT: Add secret key for session
-app.secret_key = 'your-secret-key-here-12345'  # Change this to any random string
+BASE_DIR = get_base_path()
+BASE_IMAGE_PATH = os.path.join(BASE_DIR, "form_viii_base.jpg")
+FONT_PATH = os.path.join(BASE_DIR, "Kalam-Regular.ttf")
 
-TOOLS_FOLDER = os.path.join(BASE_DIR, "pages")
-
-def load_tools():
-    tools_list = []
-    
-    if not os.path.exists(TOOLS_FOLDER):
-        print(f"❌ Pages folder not found at: {TOOLS_FOLDER}")
-        return []
-
-    print(f"✅ Scanning tools in: {TOOLS_FOLDER}")
-    
-    all_files = [f for f in os.listdir(TOOLS_FOLDER) if f.endswith(".py") and not f.startswith("_")]
-    all_files.sort(reverse=True)
-
-    for file in all_files:
-        module_name = file[:-3]
-        
+def get_hindi_font(size=28):
+    if os.path.exists(FONT_PATH):
         try:
-            module = importlib.import_module(f"pages.{module_name}")
-            blueprint_name = f"{module_name}_bp"
-            
-            if hasattr(module, blueprint_name):
-                bp = getattr(module, blueprint_name)
-                app.register_blueprint(bp)
-                print(f"✅ Registered blueprint: {module_name}")
+            return ImageFont.truetype(FONT_PATH, size)
+        except:
+            print(f"Font loading error at {FONT_PATH}")
+            return ImageFont.load_default()
+    print(f"DEBUG: Font not found at {FONT_PATH}")
+    return ImageFont.load_default()
 
-                metadata = getattr(module, "metadata", {})
-                
-                tool_info = {
-                    "title": metadata.get("title", module_name.replace("_", " ").title()),
-                    "desc": metadata.get("description", "Powerful Python utility tool."),
-                    "img": metadata.get("image", "logo.png"),
-                    "url": f"/{module_name}"
-                }
-                tools_list.append(tool_info)
-                print(f"   📝 Tool: {tool_info['title']}")
-            else:
-                print(f"⚠️ No blueprint '{blueprint_name}' found in {module_name}")
-        
-        except Exception as e:
-            print(f"❌ Error loading module {module_name}: {e}")
+def draw_hindi_text(draw, text, x, y, font, color="darkblue"):
+    if not text: 
+        return
+    try:
+        reshaped_text = reshape(str(text))
+        draw.text((x, y), reshaped_text, font=font, fill=color)
+    except Exception as e:
+        print(f"Text drawing error: {e}")
+        draw.text((x, y), str(text), font=font, fill=color)
 
-    print(f"\n📊 Total tools loaded: {len(tools_list)}")
-    return tools_list
-
-ALL_TOOLS = load_tools()
-
-@app.route("/")
+@app.route('/')
 def index():
-    return render_template("index.html", tools=ALL_TOOLS)
+    return render_template_string("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>OBC Form Generator</title>
+            <style>
+                body {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    min-height: 100vh;
+                    margin: 0;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+                .container {
+                    background: white;
+                    border-radius: 20px;
+                    padding: 40px;
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    max-width: 500px;
+                    width: 100%;
+                }
+                h2 {
+                    color: #333;
+                    margin-bottom: 30px;
+                    text-align: center;
+                }
+                label {
+                    font-weight: bold;
+                    color: #555;
+                    display: block;
+                    margin-top: 15px;
+                }
+                input {
+                    width: 100%;
+                    padding: 12px;
+                    margin-top: 5px;
+                    border: 2px solid #ddd;
+                    border-radius: 8px;
+                    font-size: 16px;
+                    font-family: 'Kalam', monospace;
+                }
+                button {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    border: none;
+                    padding: 14px 30px;
+                    border-radius: 8px;
+                    font-size: 18px;
+                    cursor: pointer;
+                    margin-top: 25px;
+                    width: 100%;
+                    transition: transform 0.2s;
+                }
+                button:hover {
+                    transform: translateY(-2px);
+                }
+                .note {
+                    font-size: 12px;
+                    color: #888;
+                    text-align: center;
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h2>📄 OBC Income Certificate Form</h2>
+                <form method="POST" action="/generate">
+                    <label>नाम (Name in Hindi):</label>
+                    <input type="text" name="name" placeholder="उदाहरण: राम कुमार" required>
+                    
+                    <label>वार्षिक आय (Annual Income):</label>
+                    <input type="text" name="income" placeholder="उदाहरण: 2,50,000 रुपये" required>
+                    
+                    <button type="submit">📥 Download Filled Form (JPG)</button>
+                </form>
+                <div class="note">
+                    ⚡ फॉर्म जेनरेट होने के बाद अपने आप डाउनलोड हो जाएगा
+                </div>
+            </div>
+        </body>
+        </html>
+    """)
 
-if __name__ == "__main__":
-    print("\n🚀 Starting Flask Server...")
-    app.run(debug=True, port=5006, host='0.0.0.0')
+@app.route('/generate', methods=['POST'])
+def generate():
+    # Check if base image exists
+    if not os.path.exists(BASE_IMAGE_PATH):
+        return f"Error: Base image missing at {BASE_IMAGE_PATH}. Please upload form_viii_base.jpg"
+
+    try:
+        # Open and process image
+        img = Image.open(BASE_IMAGE_PATH).convert('RGB')
+        draw = ImageDraw.Draw(img)
+        font = get_hindi_font(30)
+
+        # Get form data
+        user_name = request.form.get('name', '')
+        user_income = request.form.get('income', '')
+
+        # Draw text at specific coordinates
+        draw_hindi_text(draw, user_name, 210, 245, font)
+        draw_hindi_text(draw, user_income, 710, 835, font)
+
+        # Save to memory
+        img_io = io.BytesIO()
+        img.save(img_io, 'JPEG', quality=95)
+        img_io.seek(0)
+
+        # Return as downloadable file
+        return send_file(
+            img_io, 
+            mimetype='image/jpeg', 
+            as_attachment=True, 
+            download_name="OBC_Filled_Form.jpg"
+        )
+    
+    except Exception as e:
+        return f"Error generating form: {str(e)}"
+
+# Vercel handler
+app.debug = False
