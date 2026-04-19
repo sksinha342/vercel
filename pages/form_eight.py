@@ -2,6 +2,7 @@ import os
 import io
 import uuid
 import random
+import pyvips
 from flask import Blueprint, render_template, request, send_file
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
@@ -9,24 +10,14 @@ from datetime import datetime
 # 1. Blueprint Setup
 form_eight_bp = Blueprint('form_eight', __name__)
 
-metadata = {
-    "title": "OBC Form VIII Generator",
-    "description": "Handwriting style Hindi form filler for OBC certificates.",
-    "image": "pages/form8.jpg"
-}
-
-# --- पाथ सेटिंग: जो Vercel और Local दोनों जगह काम करे ---
-# यह कोड पक्का करता है कि फाइल हमेशा 'index.py' वाली Root डायरेक्टरी में ढूंढी जाए
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_IMAGE_PATH = os.path.join(BASE_DIR, "form_viii_base.jpg")
 
 def get_hindi_font(size=28):
-    """फोंट्स के लिए भी Absolute Path"""
     font_paths = [
         os.path.join(BASE_DIR, "fonts", "Kalam-Regular.ttf"),
-        os.path.join(BASE_DIR, "fonts", "Mukta-Regular.ttf"),
         os.path.join(BASE_DIR, "Kalam-Regular.ttf"),
-        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf", # Vercel Linux
+        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
     ]
     for path in font_paths:
         if os.path.exists(path):
@@ -34,34 +25,37 @@ def get_hindi_font(size=28):
             except: continue
     return ImageFont.load_default()
 
-def draw_clean_text(draw, img, text, x, y, font, rotate=False):
-    """सिर्फ वर्ड स्पेसिंग और रोटेशन के साथ टेक्स्ट ड्रा करना"""
+# --- NAYA FUNCTION: Sirf Income ke liye (Pyvips Rendering) ---
+def render_vips_text(text, size=28, color="darkblue"):
+    """Pyvips ka use karke joint characters ko sahi se render karta hai"""
+    # Termux/Linux mein font family ka naam 'Kalam' hona chahiye (fc-list check karein)
+    # Agar path se load karna hai toh 'Kalam @/path/to/font.ttf' format try karein
+    vips_font = f"Kalam {size}"
+    
+    # Text image create karein (DPI badhane se quality badhegi)
+    timg = pyvips.Image.text(text, font=vips_font, rgba=True, dpi=300)
+    
+    # Isko Pillow Image mein convert karein
+    mem_vips = timg.write_to_memory()
+    return Image.frombuffer('RGBA', (timg.width, timg.height), mem_vips, 'raw', 'RGBA', 0, 1)
+
+def draw_vips_income(img, text, x, y, size, rotate=False):
+    """Income field par rotation aur vips quality apply karne ke liye"""
     if not text: return
-    text_str = str(text)
+    
+    # Vips se Hindi text image generate karein
+    text_layer = render_vips_text(str(text), size=size)
     
     if rotate:
-        max_rot = 2.5 if len(text_str) > 15 else 1.2
+        max_rot = 2.5 if len(str(text)) > 15 else 1.2
         rotation_angle = random.uniform(-max_rot, max_rot)
-        text_layer = Image.new('RGBA', (700, 120), (255, 255, 255, 0))
-        text_draw = ImageDraw.Draw(text_layer)
-        
-        words = text_str.split(' ')
-        curr_x = 10
-        word_gap = 15
-        
-        for word in words:
-            text_draw.text((curr_x, 20), word, font=font, fill="darkblue")
-            bbox = text_draw.textbbox((curr_x, 20), word, font=font)
-            curr_x += (bbox[2] - bbox[0]) + word_gap
-            
-        rotated_text = text_layer.rotate(rotation_angle, expand=1, resample=Image.BICUBIC)
-        # 925 बेसलाइन के हिसाब से पोजीशन
-        img.paste(rotated_text, (x, 925 - 25), rotated_text) 
-    else:
-        draw.text((x, y), text_str, font=font, fill="darkblue")
+        text_layer = text_layer.rotate(rotation_angle, expand=1, resample=Image.BICUBIC)
+    
+    # Paste on base image
+    img.paste(text_layer, (x, y), text_layer)
 
 def draw_handwriting(draw, text, x, y, font):
-    """एक-एक अक्षर को हल्का रैंडम मूव करके हैंडराइटिंग लुक देना"""
+    """Normal fields ke liye purana character-by-character logic"""
     if not text: return y
     current_x, current_y = x, y
     for char in str(text):
@@ -101,15 +95,14 @@ def generate():
         'signature': request.form.get('signature', ''),
     }
     
-    # इमेज को सिर्फ READ करना (Vercel को इससे दिक्कत नहीं है)
     if not os.path.exists(BASE_IMAGE_PATH):
-        return f"Error: {BASE_IMAGE_PATH} not found. Path check karo bhai!"
+        return "Base image not found!"
 
     img = Image.open(BASE_IMAGE_PATH).convert('RGBA')
     draw = ImageDraw.Draw(img)
     default_font = get_hindi_font(28)
     
-    # फॉर्म भरने का काम
+    # 1. Normal Handwriting Fields (No change)
     fields = [
         (data['name'], 210, 245), (data['father'], 715, 236),
         (data['village'], 240, 285), (data['post_office'], 673, 275),
@@ -120,33 +113,28 @@ def generate():
     for text, x, y in fields:
         draw_handwriting(draw, text, x, y, default_font)
     
+    # 2. Income Fields (Using Pyvips for High Quality Hindi)
     if data['annual_income']:
-        draw_clean_text(draw, img, data['annual_income'], 710, 835, default_font)
+        draw_vips_income(img, data['annual_income'], 710, 835, size=28)
     
     if data['total_income']:
         val = str(data['total_income'])
         f_size = 26
         if len(val) > 18: f_size = 18
         elif len(val) > 12: f_size = 21
-        income_font = get_hindi_font(f_size)
-        draw_clean_text(draw, img, val, 122, 915, income_font, rotate=True)
+        # Baseline adjust: 915 ki jagah 905 use kiya hai rotation space ke liye
+        draw_vips_income(img, val, 122, 905, size=f_size, rotate=True)
     
+    # 3. Footer Fields
     draw_handwriting(draw, data['date'], 213, 1572, default_font)
     draw_handwriting(draw, data['village'], 213, 1532, default_font)
     sign_text = data['signature'] if data['signature'] else "______________"
     draw_handwriting(draw, sign_text, 800, 1525, default_font)
     
-    # --- मुख्य बदलाव: मेमोरी (RAM) में राइट करना ---
-    # यहाँ हम डिस्क पर कोई फाइल सेव नहीं कर रहे
+    # Save to memory and return
     img_io = io.BytesIO()
     final_img = img.convert('RGB')
-    final_img.save(img_io, 'JPEG', quality=40)
+    final_img.save(img_io, 'JPEG', quality=95) # Quality badha di gayi hai
     img_io.seek(0)
     
-    # सीधे मेमोरी से डेटा भेजें
-    return send_file(
-        img_io, 
-        mimetype='image/jpeg', 
-        as_attachment=True, 
-        download_name="OBC_Form_VIII_Filled.jpg"
-    )
+    return send_file(img_io, mimetype='image/jpeg', as_attachment=True, download_name="OBC_Form.jpg")
