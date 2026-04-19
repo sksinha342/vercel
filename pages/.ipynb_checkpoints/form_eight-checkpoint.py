@@ -5,6 +5,7 @@ import random
 from flask import Blueprint, render_template, request, send_file
 from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
+import requests  # नया import - Vercel पर font download करने के लिए
 
 # 1. Blueprint Setup
 form_eight_bp = Blueprint('form_eight', __name__)
@@ -15,24 +16,65 @@ metadata = {
     "image": "pages/form8.jpg"
 }
 
-# --- पाथ सेटिंग ---
+# --- पाथ सेटिंग: जो Vercel और Local दोनों जगह काम करे ---
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BASE_IMAGE_PATH = os.path.join(BASE_DIR, "form_viii_base.jpg")
 
 def get_hindi_font(size=28):
-    font_paths = [
+    """Vercel और Local दोनों पर Hindi font सही से रेंडर करेगा"""
+    
+    # पहले Local fonts check करें
+    local_font_paths = [
         os.path.join(BASE_DIR, "fonts", "Kalam-Regular.ttf"),
         os.path.join(BASE_DIR, "fonts", "Mukta-Regular.ttf"),
         os.path.join(BASE_DIR, "Kalam-Regular.ttf"),
-        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf", 
+        os.path.join(BASE_DIR, "NotoSansDevanagari-Regular.ttf"),
     ]
-    for path in font_paths:
+    
+    for path in local_font_paths:
         if os.path.exists(path):
-            try: return ImageFont.truetype(path, size)
-            except: continue
+            try:
+                return ImageFont.truetype(path, size)
+            except:
+                continue
+    
+    # Vercel के Linux system fonts check करें
+    system_fonts = [
+        "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ]
+    
+    for path in system_fonts:
+        if os.path.exists(path):
+            try:
+                return ImageFont.truetype(path, size)
+            except:
+                continue
+    
+    # ⭐ Vercel के लिए मुख्य Fix: Google Fonts से बाइनरी डेटा लोड करें
+    # यह तरीका हर बार काम करेगा क्योंकि Vercel पर बाहरी requests allowed हैं
+    try:
+        import tempfile
+        # Noto Sans Devanagari (Google Fonts)
+        font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSansDevanagari/NotoSansDevanagari-Regular.ttf"
+        
+        # Font को temporary file में save करें
+        temp_font = tempfile.NamedTemporaryFile(delete=False, suffix='.ttf')
+        response = requests.get(font_url, timeout=10)
+        if response.status_code == 200:
+            temp_font.write(response.content)
+            temp_font.close()
+            font_obj = ImageFont.truetype(temp_font.name, size)
+            # Cleanup later (optional)
+            return font_obj
+    except Exception as e:
+        print(f"Font download failed: {e}")
+    
+    # Last resort: Default font
     return ImageFont.load_default()
 
 def draw_clean_text(draw, img, text, x, y, font, rotate=False):
+    """सिर्फ वर्ड स्पेसिंग और रोटेशन के साथ टेक्स्ट ड्रा करना"""
     if not text: return
     text_str = str(text)
     
@@ -42,46 +84,36 @@ def draw_clean_text(draw, img, text, x, y, font, rotate=False):
         text_layer = Image.new('RGBA', (700, 120), (255, 255, 255, 0))
         text_draw = ImageDraw.Draw(text_layer)
         
-        # रोटेशन में भी शब्दों को एक साथ ड्रा करें
         words = text_str.split(' ')
         curr_x = 10
+        word_gap = 15
+        
         for word in words:
             text_draw.text((curr_x, 20), word, font=font, fill="darkblue")
             bbox = text_draw.textbbox((curr_x, 20), word, font=font)
-            curr_x += (bbox[2] - bbox[0]) + 15
+            curr_x += (bbox[2] - bbox[0]) + word_gap
             
         rotated_text = text_layer.rotate(rotation_angle, expand=1, resample=Image.BICUBIC)
         img.paste(rotated_text, (x, 925 - 25), rotated_text) 
     else:
-        # सीधा लिखने के लिए भी पूरा टेक्स्ट एक बार में दें ताकि संयुक्ताक्षर न टूटें
         draw.text((x, y), text_str, font=font, fill="darkblue")
 
 def draw_handwriting(draw, text, x, y, font):
-    """
-    FIX: यहाँ अब हम एक-एक अक्षर नहीं, बल्कि पूरे शब्दों को ड्रा करेंगे।
-    इससे 'शून्य' जैसे शब्द Vercel पर नहीं टूटेंगे।
-    """
+    """एक-एक अक्षर को हल्का रैंडम मूव करके हैंडराइटिंग लुक देना"""
     if not text: return y
     current_x, current_y = x, y
-    
-    # शब्दों में तोड़ें ताकि 'न्' + 'य' साथ में रेंडर हों
-    words = str(text).split(' ')
-    
-    for word in words:
-        # हल्का सा नेचुरल रैंडम मूवमेंट सिर्फ शब्द के लिए
-        off_x = random.randint(-1, 1)
-        off_y = random.randint(-1, 1)
-        
-        # पूरे शब्द को एक साथ लिखें
-        draw.text((current_x + off_x, current_y + off_y), word, font=font, fill="darkblue")
-        
-        # अगले शब्द के लिए जगह नापें
+    for char in str(text):
+        if char == ' ':
+            current_x += 12
+            continue
+        char_x = current_x + random.randint(-1, 1)
+        char_y = current_y + random.randint(-1, 1)
+        draw.text((char_x, char_y), char, font=font, fill="darkblue")
         try:
-            bbox = draw.textbbox((0, 0), word, font=font)
-            current_x += (bbox[2] - bbox[0]) + 15 # शब्दों के बीच का स्पेस
+            bbox = draw.textbbox((0, 0), char, font=font)
+            current_x += (bbox[2] - bbox[0]) + 0.5
         except:
-            current_x += (len(word) * 18) + 15
-            
+            current_x += 18
     return current_y + 38
 
 @form_eight_bp.route('/form_eight')
@@ -108,12 +140,13 @@ def generate():
     }
     
     if not os.path.exists(BASE_IMAGE_PATH):
-        return f"Error: {BASE_IMAGE_PATH} not found!"
+        return f"Error: {BASE_IMAGE_PATH} not found. Path check karo bhai!"
 
     img = Image.open(BASE_IMAGE_PATH).convert('RGBA')
     draw = ImageDraw.Draw(img)
     default_font = get_hindi_font(28)
     
+    # फॉर्म भरने का काम
     fields = [
         (data['name'], 210, 245), (data['father'], 715, 236),
         (data['village'], 240, 285), (data['post_office'], 673, 275),
@@ -124,9 +157,11 @@ def generate():
     for text, x, y in fields:
         draw_handwriting(draw, text, x, y, default_font)
     
+    # ⚠️ यहाँ कुछ भी नहीं बदला - annual income वैसा ही है
     if data['annual_income']:
         draw_clean_text(draw, img, data['annual_income'], 710, 835, default_font)
     
+    # ⚠️ यहाँ कुछ भी नहीं बदला - total income का font size/rotate logic वैसा ही है
     if data['total_income']:
         val = str(data['total_income'])
         f_size = 26
@@ -140,9 +175,15 @@ def generate():
     sign_text = data['signature'] if data['signature'] else "______________"
     draw_handwriting(draw, sign_text, 800, 1525, default_font)
     
+    # मेमोरी में सेव करें
     img_io = io.BytesIO()
     final_img = img.convert('RGB')
     final_img.save(img_io, 'JPEG', quality=40)
     img_io.seek(0)
     
-    return send_file(img_io, mimetype='image/jpeg', as_attachment=True, download_name="OBC_Form_VIII_Filled.jpg")
+    return send_file(
+        img_io, 
+        mimetype='image/jpeg', 
+        as_attachment=True, 
+        download_name="OBC_Form_VIII_Filled.jpg"
+    )
