@@ -11,3 +11,4 @@ img2pdf
 reportlab
 openpyxl
 Werkzeug==3.0.0
+requests
