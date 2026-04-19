@@ -9,7 +9,6 @@ opencv-python-headless
 img2pdf
 reportlab
 openpyxl
-indic_unicode_reshaper
 Werkzeug==3.0.0
 pyvips==2.2.1
 cffi==1.16.0
