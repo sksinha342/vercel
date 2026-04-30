@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>DocCombine - Multi-Side Document Maker</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+
+        :root {
+            --bg: #0d0f14;
+            --surface: #161a23;
+            --surface2: #1e2330;
+            --border: #2a3045;
+            --accent: #4f8ef7;
+            --accent2: #38e2a8;
+            --danger: #ff5e6c;
+            --warn: #ffb347;
+            --text: #e8ecf5;
+            --muted: #7a85a0;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 16px;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 24px 0 28px;
+        }
+
+        .header h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .header p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        /* Slot Grid */
+        .slots-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .slot-card {
+            background: var(--surface);
+            border: 1.5px dashed var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+            position: relative;
+        }
+
+        .slot-card.has-image {
+            border-style: solid;
+            border-color: var(--accent);
+        }
+
+        .slot-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .slot-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .slot-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .slot-actions button {
+            padding: 4px 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-upload-slot {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-remove-slot {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-rotate-slot {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border) !important;
+        }
+
+        .slot-actions button:hover { opacity: 0.85; transform: scale(0.97); }
+
+        .slot-preview {
+            min-height: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .slot-placeholder {
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .slot-placeholder .icon {
+            font-size: 2.2rem;
+            display: block;
+            margin-bottom: 8px;
+            opacity: 0.5;
+        }
+
+        .slot-placeholder p {
+            font-size: 0.8rem;
+        }
+
+        .slot-img {
+            width: 100%;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .slot-img.visible { display: block; }
+
+        .slot-num {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: rgba(79,142,247,0.15);
+            color: var(--accent);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            font-family: 'Syne', sans-serif;
+        }
+
+        /* Add Slot Button */
+        .add-slot-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--surface);
+            border: 1.5px dashed var(--border);
+            border-radius: 14px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 16px;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .add-slot-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(79,142,247,0.05);
+        }
+
+        /* Layout Preview */
+        .preview-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 14px;
+        }
+
+        /* Layout options */
+        .layout-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .layout-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 8px;
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .layout-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: rgba(79,142,247,0.08);
+        }
+
+        .layout-btn .layout-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Canvas preview */
+        .canvas-preview-wrap {
+            background: #111;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            border: 1px solid var(--border);
+        }
+
+        #previewCanvas {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        .setting-item label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        .setting-item input,
+        .setting-item select {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.88rem;
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .setting-item input:focus,
+        .setting-item select:focus {
+            border-color: var(--accent);
+        }
+
+        /* Spacing control */
+        .spacing-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .spacing-row label {
+            font-size: 0.75rem;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        .spacing-row input[type=range] {
+            flex: 1;
+            accent-color: var(--accent);
+            padding: 0;
+        }
+
+        .spacing-val {
+            font-size: 0.8rem;
+            color: var(--accent);
+            font-weight: 600;
+            min-width: 36px;
+            text-align: right;
+        }
+
+        /* Download Buttons */
+        .download-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .download-row button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-img {
+            background: linear-gradient(135deg, var(--accent2), #20c997);
+            color: #0d1a14;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, var(--danger), #cc3344);
+            color: white;
+        }
+
+        .download-row button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .download-row button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Spinner */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: currentColor;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Confirm Overlay */
+        .confirm-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 3000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .confirm-dialog {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 360px;
+            width: 92%;
+            text-align: center;
+            animation: slideUp 0.2s ease;
+        }
+
+        .confirm-dialog h3 { color: var(--accent); font-family: 'Syne', sans-serif; margin-bottom: 14px; }
+
+        .size-info {
+            background: var(--surface2);
+            padding: 14px;
+            border-radius: 12px;
+            margin: 14px 0;
+        }
+
+        .orig-size { color: var(--warn); font-size: 1.1rem; font-weight: 700; }
+        .new-size  { color: var(--accent2); font-size: 1.4rem; font-weight: 700; margin-top: 8px; }
+        .saved-txt { color: var(--accent2); font-size: 0.85rem; margin-top: 6px; }
+        .incr-txt  { color: var(--danger);  font-size: 0.85rem; margin-top: 6px; }
+
+        .confirm-btns { display: flex; gap: 10px; margin-top: 18px; }
+        .confirm-btns button { flex: 1; padding: 12px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+        .btn-ok  { background: var(--accent2); color: #0a1a12; }
+        .btn-no  { background: var(--danger);  color: white; }
+
+        @keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* Progress Bar */
+        .progress-wrap {
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .progress-wrap.show { display: block; }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent2);
+            color: #0a1a12;
+            padding: 10px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            z-index: 4000;
+            font-size: 0.9rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @media (max-width: 560px) {
+            .slots-grid { grid-template-columns: 1fr; }
+            .download-row { flex-direction: column; }
+            .header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>📋 DocCombine</h1>
+        <p>Multiple document sides → ek hi page pe combine karo</p>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <div id="fileInputs"></div>
+
+    <!-- Slot Cards Grid -->
+    <div class="slots-grid" id="slotsGrid"></div>
+
+    <!-- Add Slot Button -->
+    <button class="add-slot-btn" id="addSlotBtn">＋ Aur Side Add Karo</button>
+
+    <!-- Progress Bar -->
+    <div class="progress-wrap" id="progressWrap">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <!-- Layout & Preview -->
+    <div class="preview-section">
+        <div class="section-title">📐 Layout & Preview</div>
+
+        <div class="layout-options">
+            <button class="layout-btn active" data-layout="vertical" onclick="setLayout('vertical', this)">
+                <span class="layout-icon">⬇️</span>Vertical Stack
+            </button>
+            <button class="layout-btn" data-layout="horizontal" onclick="setLayout('horizontal', this)">
+                <span class="layout-icon">➡️</span>Side by Side
+            </button>
+            <button class="layout-btn" data-layout="grid2x2" onclick="setLayout('grid2x2', this)">
+                <span class="layout-icon">⊞</span>2×2 Grid
+            </button>
+            <button class="layout-btn" data-layout="grid1x3" onclick="setLayout('grid1x3', this)">
+                <span class="layout-icon">⊟</span>1×3 Row
+            </button>
+        </div>
+
+        <div class="canvas-preview-wrap">
+            <canvas id="previewCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="settings-panel">
+        <div class="section-title">⚙️ Settings</div>
+        <div class="settings-grid">
+            <div class="setting-item">
+                <label>📦 Target Size (KB)</label>
+                <input type="number" id="targetKB" placeholder="Auto" min="10" step="50">
+            </div>
+            <div class="setting-item">
+                <label>🎯 Output Format</label>
+                <select id="outputFormat">
+                    <option value="jpeg">JPEG</option>
+                    <option value="png">PNG</option>
+                    <option value="webp">WebP</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label>📄 Page Background</label>
+                <select id="bgColor">
+                    <option value="white">White</option>
+                    <option value="#f5f5f5">Light Gray</option>
+                    <option value="black">Black</option>
+                    <option value="#1a1a2e">Dark Blue</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label>📏 Output Width (px)</label>
+                <input type="number" id="outputWidth" value="1200" min="400" max="4000" step="100">
+            </div>
+        </div>
+        <div class="spacing-row">
+            <label>Gap between images:</label>
+            <input type="range" id="gapSlider" min="0" max="80" value="20" oninput="updateGapVal(this.value); renderPreview();">
+            <span class="spacing-val" id="gapVal">20px</span>
+        </div>
+        <div class="spacing-row">
+            <label>Padding (edges):</label>
+            <input type="range" id="padSlider" min="0" max="80" value="20" oninput="updatePadVal(this.value); renderPreview();">
+            <span class="spacing-val" id="padVal">20px</span>
+        </div>
+    </div>
+
+    <!-- Download -->
+    <div class="download-row">
+        <button class="btn-img" id="saveImgBtn">💾 Save as Image</button>
+        <button class="btn-pdf" id="savePdfBtn">📑 Save as PDF</button>
+    </div>
+
+</div>
+
+<script>
+// ===== State =====
+let slots = [];        // { id, imageElement, rotation, fileSizeKB, fileName }
+let nextId = 1;
+let currentLayout = 'vertical';
+
+// ===== Init: 2 default slots =====
+addSlot('Front Side');
+addSlot('Back Side');
+
+// ===== Slot Management =====
+function addSlot(labelText) {
+    const id = nextId++;
+    const label = labelText || `Side ${id}`;
+    slots.push({ id, imageElement: null, rotation: 0, fileSizeKB: 0, fileName: '' });
+    renderSlots();
+}
+
+document.getElementById('addSlotBtn').addEventListener('click', () => addSlot());
+
+function removeSlot(id) {
+    if (slots.length <= 1) { showToast('Kam se kam 1 side chahiye!'); return; }
+    slots = slots.filter(s => s.id !== id);
+    renderSlots();
+    renderPreview();
+}
+
+function renderSlots() {
+    const grid = document.getElementById('slotsGrid');
+    const fileInputs = document.getElementById('fileInputs');
+
+    grid.innerHTML = '';
+    fileInputs.innerHTML = '';
+
+    slots.forEach((slot, idx) => {
+        // Hidden file input
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*';
+        inp.id = `file_${slot.id}`;
+        inp.style.display = 'none';
+        inp.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) loadSlotImage(slot.id, e.target.files[0]);
+            inp.value = '';
+        });
+        fileInputs.appendChild(inp);
+
+        // Card
+        const card = document.createElement('div');
+        card.className = `slot-card${slot.imageElement ? ' has-image' : ''}`;
+        card.id = `slot_${slot.id}`;
+
+        const labels = ['Front Side', 'Back Side', 'Side 3', 'Side 4', 'Side 5', 'Side 6'];
+        const slotLabel = labels[idx] || `Side ${idx + 1}`;
+
+        card.innerHTML = `
+            <div class="slot-header">
+                <span class="slot-label">${slotLabel}</span>
+                <div class="slot-actions">
+                    ${slot.imageElement ? `<button class="btn-rotate-slot" onclick="rotateSlot(${slot.id})">↻ 90°</button>` : ''}
+                    <button class="btn-upload-slot" onclick="document.getElementById('file_${slot.id}').click()">
+                        ${slot.imageElement ? '🔄 Change' : '📤 Upload'}
+                    </button>
+                    ${slots.length > 1 ? `<button class="btn-remove-slot" onclick="removeSlot(${slot.id})">✕</button>` : ''}
+                </div>
+            </div>
+            <div class="slot-preview" onclick="if(!${slot.imageElement ? 'true' : 'false'}) document.getElementById('file_${slot.id}').click()">
+                <span class="slot-num">#${idx + 1}</span>
+                ${slot.imageElement
+                    ? `<img class="slot-img visible" id="slotimg_${slot.id}" src="${getRotatedDataURL(slot)}">`
+                    : `<div class="slot-placeholder">
+                            <span class="icon">🖼️</span>
+                            <p>Tap to upload image</p>
+                       </div>`
+                }
+            </div>
+        `;
+
+        grid.appendChild(card);
+    });
+}
+
+function loadSlotImage(id, file) {
+    const slot = slots.find(s => s.id === id);
+    if (!slot) return;
+    slot.fileSizeKB = file.size / 1024;
+    slot.fileName = file.name;
+    slot.rotation = 0;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            slot.imageElement = img;
+            renderSlots();
+            renderPreview();
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function rotateSlot(id) {
+    const slot = slots.find(s => s.id === id);
+    if (!slot || !slot.imageElement) return;
+    slot.rotation = (slot.rotation + 90) % 360;
+    renderSlots();
+    renderPreview();
+}
+
+function getRotatedDataURL(slot) {
+    if (!slot.imageElement) return '';
+    if (slot.rotation === 0) return slot.imageElement.src;
+
+    const img = slot.imageElement;
+    const rad = slot.rotation * Math.PI / 180;
+    const sin = Math.abs(Math.sin(rad)), cos = Math.abs(Math.cos(rad));
+    const w = Math.round(img.width * cos + img.height * sin);
+    const h = Math.round(img.width * sin + img.height * cos);
+
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    return c.toDataURL();
+}
+
+function getRotatedImage(slot) {
+    if (!slot.imageElement) return null;
+    if (slot.rotation === 0) return slot.imageElement;
+
+    const url = getRotatedDataURL(slot);
+    // Return as canvas for drawing
+    const img = slot.imageElement;
+    const rad = slot.rotation * Math.PI / 180;
+    const sin = Math.abs(Math.sin(rad)), cos = Math.abs(Math.cos(rad));
+    const w = Math.round(img.width * cos + img.height * sin);
+    const h = Math.round(img.width * sin + img.height * cos);
+
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(rad);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    return c;
+}
+
+// ===== Layout =====
+function setLayout(layout, btn) {
+    currentLayout = layout;
+    document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPreview();
+}
+
+function updateGapVal(v) { document.getElementById('gapVal').textContent = v + 'px'; }
+function updatePadVal(v) { document.getElementById('padVal').textContent = v + 'px'; }
+
+// ===== Render Combined Canvas =====
+function buildCombinedCanvas(outputWidth) {
+    const filled = slots.filter(s => s.imageElement);
+    if (!filled.length) return null;
+
+    const gap     = parseInt(document.getElementById('gapSlider').value);
+    const pad     = parseInt(document.getElementById('padSlider').value);
+    const bgColor = document.getElementById('bgColor').value;
+    const outW    = outputWidth || parseInt(document.getElementById('outputWidth').value) || 1200;
+
+    // Get rotated drawables
+    const drawables = filled.map(s => getRotatedImage(s));
+
+    const canvas = document.createElement('canvas');
+    const ctx    = canvas.getContext('2d');
+
+    if (currentLayout === 'vertical') {
+        // Stack top to bottom, each image full width
+        const innerW = outW - pad * 2;
+        let totalH = pad;
+        const heights = drawables.map(d => {
+            const scale = innerW / (d.width || d.naturalWidth);
+            return Math.round((d.height || d.naturalHeight) * scale);
+        });
+        totalH += heights.reduce((a, b) => a + b, 0) + gap * (drawables.length - 1) + pad;
+
+        canvas.width  = outW;
+        canvas.height = totalH;
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, outW, totalH);
+
+        let y = pad;
+        drawables.forEach((d, i) => {
+            ctx.drawImage(d, pad, y, innerW, heights[i]);
+            y += heights[i] + gap;
+        });
+
+    } else if (currentLayout === 'horizontal') {
+        // Side by side, equal width per image
+        const count   = drawables.length;
+        const slotW   = Math.floor((outW - pad * 2 - gap * (count - 1)) / count);
+        let maxH = 0;
+        const heights = drawables.map(d => {
+            const h = Math.round((d.height || d.naturalHeight) * slotW / (d.width || d.naturalWidth));
+            if (h > maxH) maxH = h;
+            return h;
+        });
+        canvas.width  = outW;
+        canvas.height = maxH + pad * 2;
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let x = pad;
+        drawables.forEach((d, i) => {
+            const yOff = pad + Math.round((maxH - heights[i]) / 2);
+            ctx.drawImage(d, x, yOff, slotW, heights[i]);
+            x += slotW + gap;
+        });
+
+    } else if (currentLayout === 'grid2x2') {
+        // 2 columns grid
+        const cols  = 2;
+        const rows  = Math.ceil(drawables.length / cols);
+        const cellW = Math.floor((outW - pad * 2 - gap * (cols - 1)) / cols);
+        const cellH = Math.round(cellW * 0.65);
+
+        canvas.width  = outW;
+        canvas.height = pad * 2 + rows * cellH + (rows - 1) * gap;
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        drawables.forEach((d, i) => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const x   = pad + col * (cellW + gap);
+            const y   = pad + row * (cellH + gap);
+
+            // Fit image inside cell maintaining aspect ratio
+            const scale = Math.min(cellW / (d.width || d.naturalWidth), cellH / (d.height || d.naturalHeight));
+            const dw = Math.round((d.width || d.naturalWidth) * scale);
+            const dh = Math.round((d.height || d.naturalHeight) * scale);
+            const dx = x + Math.round((cellW - dw) / 2);
+            const dy = y + Math.round((cellH - dh) / 2);
+            ctx.drawImage(d, dx, dy, dw, dh);
+        });
+
+    } else if (currentLayout === 'grid1x3') {
+        // 3 columns in a single row
+        const cols  = Math.min(drawables.length, 3);
+        const cellW = Math.floor((outW - pad * 2 - gap * (cols - 1)) / cols);
+        let maxH = 0;
+        const heights = drawables.map(d => {
+            const h = Math.round((d.height || d.naturalHeight) * cellW / (d.width || d.naturalWidth));
+            if (h > maxH) maxH = h;
+            return h;
+        });
+
+        canvas.width  = outW;
+        canvas.height = maxH + pad * 2;
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        let x = pad;
+        drawables.slice(0, 3).forEach((d, i) => {
+            const yOff = pad + Math.round((maxH - heights[i]) / 2);
+            ctx.drawImage(d, x, yOff, cellW, heights[i]);
+            x += cellW + gap;
+        });
+    }
+
+    return canvas;
+}
+
+// ===== Live Preview (downscaled) =====
+let previewTimeout = null;
+function renderPreview() {
+    if (previewTimeout) clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        const previewCanvas = document.getElementById('previewCanvas');
+        const combined = buildCombinedCanvas(600); // small for preview
+        if (!combined) {
+            previewCanvas.width  = 300;
+            previewCanvas.height = 120;
+            const ctx = previewCanvas.getContext('2d');
+            ctx.fillStyle = '#161a23';
+            ctx.fillRect(0, 0, 300, 120);
+            ctx.fillStyle = '#7a85a0';
+            ctx.font = '14px DM Sans';
+            ctx.textAlign = 'center';
+            ctx.fillText('Images upload karo preview ke liye', 150, 65);
+            return;
+        }
+        previewCanvas.width  = combined.width;
+        previewCanvas.height = combined.height;
+        previewCanvas.getContext('2d').drawImage(combined, 0, 0);
+    }, 100);
+}
+
+// Init preview
+renderPreview();
+
+// Listen to settings changes
+['outputWidth', 'bgColor', 'outputFormat'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderPreview);
+});
+
+// ===== Client-Side Compression (Binary Search) =====
+async function compressCanvas(sourceCanvas, targetKB, format) {
+    const mimeType = format === 'png' ? 'image/png' : format === 'webp' ? 'image/webp' : 'image/jpeg';
+
+    if (!targetKB || targetKB <= 0) {
+        return await new Promise(res => sourceCanvas.toBlob(res, mimeType, 0.92));
+    }
+
+    const targetBytes = targetKB * 1024;
+
+    // Step 1: Binary search on quality
+    let low = 10, high = 100;
+    let bestBlob = null, bestSize = 0;
+
+    for (let i = 0; i < 12; i++) {
+        const mid  = Math.floor((low + high) / 2);
+        const blob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, mid / 100));
+        if (blob.size <= targetBytes) {
+            if (blob.size > bestSize) { bestBlob = blob; bestSize = blob.size; }
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+
+    // Step 2: If quality search not enough, shrink dimensions
+    if (!bestBlob || bestSize > targetBytes) {
+        let scale = 0.9;
+        while (scale > 0.2) {
+            const nw = Math.max(100, Math.floor(sourceCanvas.width * scale));
+            const nh = Math.max(100, Math.floor(sourceCanvas.height * scale));
+            const sc = document.createElement('canvas');
+            sc.width = nw; sc.height = nh;
+            sc.getContext('2d').drawImage(sourceCanvas, 0, 0, nw, nh);
+
+            for (const q of [80, 70, 60, 50, 40, 30]) {
+                const blob = await new Promise(res => sc.toBlob(res, mimeType, q / 100));
+                if (blob.size <= targetBytes) { bestBlob = blob; bestSize = blob.size; break; }
+            }
+            if (bestBlob && bestSize <= targetBytes) break;
+            scale -= 0.1;
+        }
+    }
+
+    // Fallback
+    if (!bestBlob) bestBlob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, 0.1));
+    return bestBlob;
+}
+
+// ===== Confirm Dialog =====
+function showConfirmDialog(origKB, newKB, onConfirm) {
+    document.querySelector('.confirm-overlay')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+
+    const saved    = origKB - newKB;
+    const pct      = ((Math.abs(saved) / origKB) * 100).toFixed(1);
+    const isSaved  = saved > 0;
+
+    overlay.innerHTML = `
+        <div class="confirm-dialog">
+            <h3>📊 Download Confirmation</h3>
+            <div class="size-info">
+                <div style="color:var(--muted);font-size:.8rem;margin-bottom:6px;">Original Total Size</div>
+                <div class="orig-size">${origKB.toFixed(1)} KB</div>
+                <div style="color:var(--muted);font-size:.8rem;margin:10px 0 6px;">New Size</div>
+                <div class="new-size">${newKB.toFixed(1)} KB</div>
+                ${isSaved
+                    ? `<div class="saved-txt">✅ ${saved.toFixed(1)} KB save hua (${pct}% smaller)</div>`
+                    : `<div class="incr-txt">⚠️ ${Math.abs(saved).toFixed(1)} KB increase hua (${pct}% larger)</div>`
+                }
+            </div>
+            <div class="confirm-btns">
+                <button class="btn-ok"  id="dlOk">✓ Download</button>
+                <button class="btn-no"  id="dlNo">✗ Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    document.getElementById('dlOk').onclick = () => { overlay.remove(); onConfirm(); };
+    document.getElementById('dlNo').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+}
+
+// ===== Total original size =====
+function totalOriginalKB() {
+    return slots.filter(s => s.imageElement).reduce((a, s) => a + s.fileSizeKB, 0);
+}
+
+// ===== Save as Image =====
+document.getElementById('saveImgBtn').addEventListener('click', async () => {
+    const filled = slots.filter(s => s.imageElement);
+    if (!filled.length) { showToast('Pehle images upload karo!'); return; }
+
+    const btn  = document.getElementById('saveImgBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Processing...';
+    btn.disabled  = true;
+
+    try {
+        const format   = document.getElementById('outputFormat').value;
+        const targetKB = parseFloat(document.getElementById('targetKB').value) || null;
+        const combined = buildCombinedCanvas();
+
+        setProgress(true, 40);
+        const blob     = await compressCanvas(combined, targetKB, format);
+        setProgress(true, 100);
+
+        const newKB    = blob.size / 1024;
+        const origKB   = totalOriginalKB();
+
+        showConfirmDialog(origKB, newKB, () => {
+            const ext = format === 'jpeg' ? 'jpg' : format;
+            triggerDownload(blob, `combined_document.${ext}`);
+            showToast('Image save ho gayi! ✅');
+        });
+    } catch(e) {
+        alert('Error: ' + e.message);
+    } finally {
+        btn.innerHTML = orig;
+        btn.disabled  = false;
+        setProgress(false);
+    }
+});
+
+// ===== Save as PDF =====
+document.getElementById('savePdfBtn').addEventListener('click', async () => {
+    const filled = slots.filter(s => s.imageElement);
+    if (!filled.length) { showToast('Pehle images upload karo!'); return; }
+
+    const btn  = document.getElementById('savePdfBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Generating PDF...';
+    btn.disabled  = true;
+
+    try {
+        const targetKB = parseFloat(document.getElementById('targetKB').value) || null;
+        const combined = buildCombinedCanvas();
+
+        setProgress(true, 40);
+        const blob  = await compressCanvas(combined, targetKB, 'jpeg');
+        setProgress(true, 80);
+
+        const newKB  = blob.size / 1024;
+        const origKB = totalOriginalKB();
+
+        showConfirmDialog(origKB, newKB, () => {
+            const imgUrl = URL.createObjectURL(blob);
+            const img    = new Image();
+            img.onload = () => {
+                const { jsPDF } = window.jspdf;
+                const orient = img.width > img.height ? 'landscape' : 'portrait';
+                const pdf    = new jsPDF({ orientation: orient, unit: 'mm' });
+                const pw     = pdf.internal.pageSize.getWidth();
+                const ph     = pdf.internal.pageSize.getHeight();
+                const ratio  = Math.min(pw / img.width, ph / img.height);
+                const dw     = img.width  * ratio;
+                const dh     = img.height * ratio;
+                pdf.addImage(imgUrl, 'JPEG', (pw - dw) / 2, (ph - dh) / 2, dw, dh);
+                pdf.save('combined_document.pdf');
+                URL.revokeObjectURL(imgUrl);
+                showToast('PDF save ho gayi! ✅');
+            };
+            img.src = imgUrl;
+        });
+
+        setProgress(true, 100);
+    } catch(e) {
+        alert('PDF Error: ' + e.message);
+    } finally {
+        btn.innerHTML = orig;
+        btn.disabled  = false;
+        setProgress(false);
+    }
+});
+
+// ===== Helpers =====
+function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href    = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function setProgress(show, pct) {
+    const wrap = document.getElementById('progressWrap');
+    const fill = document.getElementById('progressFill');
+    wrap.classList.toggle('show', show);
+    if (pct !== undefined) fill.style.width = pct + '%';
+    if (!show) fill.style.width = '0%';
+}
+
+function showToast(msg) {
+    document.querySelector('.toast')?.remove();
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+}
+</script>
+</body>
+</html>

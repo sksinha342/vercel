@@ -302,3 +302,7 @@ def get_image_info():
 def rc():
     if request.method == "GET":
         return render_template("AUTO ADD IN RC.html")
+@resize_bp.route("/resize/imgcombine", methods=["GET", "POST"])
+def imgcombine():
+    if request.method == "GET":
+        return render_template("imgcombine.html")
