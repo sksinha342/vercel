@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Ration Card Pro Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #eef2f7; padding: 20px; color: #333; }
+        .box { max-width: 950px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; background: #fdfdfd; border: 1px solid #eee; padding: 15px; border-radius: 8px; position: relative; }
+        .field { flex: 1; min-width: 220px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #555; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        button { padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-main { background: #007bff; color: white; width: 100%; font-size: 18px; margin-top: 10px; }
+        .btn-add { background: #28a745; color: white; }
+        .btn-remove { background: #dc3545; color: white; padding: 6px 12px; font-size: 12px; margin-top: 5px; margin-left: 10px; }
+        .copy-btn { background: #6c757d; color: white; padding: 6px 12px; font-size: 12px; margin-top: 5px; }
+        .copy-btn:hover { background: #343a40; }
+        .output { margin-top: 25px; background: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; }
+        textarea { width: 100%; height: 80px; font-family: 'Courier New', monospace; font-size: 12px; margin-top: 8px; border: 1px solid #ced4da; border-radius: 4px; resize: none; }
+        h2 { border-left: 6px solid #007bff; padding-left: 15px; margin-bottom: 20px; font-size: 22px; }
+        h3 { font-size: 18px; margin-bottom: 10px; color: #007bff; }
+        .member-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 10px; }
+        .remove-btn { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 4px 12px; cursor: pointer; font-size: 12px; }
+        .remove-btn:hover { background: #c82333; }
+        .info-text { background: #e9ecef; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <div class="info-text">
+        💡 <strong>टिप:</strong> नया सदस्य जोड़ने के लिए नीचे "सदस्य जोड़ें" बटन दबाएं। 
+        किसी सदस्य को हटाने के लिए उसके हेडर में <strong style="color:#dc3545;">✖ हटाएँ</strong> बटन दबाएं।
+    </div>
+
+    <h2>1. आवेदिका का विवरण (Applicant)</h2>
+
+    <div class="row" id="app-form">
+        <div class="field"><label>नाम (English)</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR"></div>
+        <div class="field"><label>नाम (हिंदी)</label><input type="text" id="a_n_hn" value="सुजीत कुमार"></div>
+        <div class="field"><label>पिता/पति (English)</label><input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH"></div>
+        <div class="field"><label>पिता/पति (हिंदी)</label><input type="text" id="a_f_hn" value="नन्द कुमार सिंह"></div>
+        <div class="field">
+            <label>लिंग</label>
+            <select id="a_gen"><option value="F" selected>Female (महिला)</option><option value="M">Male (पुरुष)</option></select>
+        </div>
+        <div class="field"><label>व्यवसाय/आय का स्रोत</label><input type="text" id="a_occ" value="कृषि"></div>
+        <div class="field"><label>मासिक आय</label><input type="number" id="a_inc" value="8000"></div>
+        <div class="field"><label>आय प्रमाण पत्र सं.</label><input type="text" id="a_inc_no" value="BICCO/2026/2887987"></div>
+        <div class="field"><label>बैंक खाता सं.</label><input type="text" id="a_bank" value="989879709709"></div>
+        <div class="field"><label>पूरा पता</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_addr" value="VILL-KATHAR KHURD,PO-CHAUKIYA,PS-KRISHNA BRAHM"></div>
+    </div>
+
+    <h2>2. परिवार के सदस्य (Members)</h2>
+    <div style="margin-bottom: 20px;">
+        <button onclick="addNewMember()" class="btn-add" style="margin-right: 10px;">+ नया सदस्य जोड़ें</button>
+        <button onclick="removeAllMembers()" class="btn-remove" style="background:#dc3545;">सभी सदस्य हटाएँ</button>
+    </div>
+    
+    <div id="m-container"></div>
+
+    <button onclick="generateAll()" class="btn-main">सबका JS कोड जनरेट करें</button>
+
+    <div id="final-output" class="output" style="display:none;">
+        <h3>जनरेट किया हुआ कोड (Bookmarklets)</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <strong>आवेदिका का कोड:</strong>
+            <textarea id="app-res" readonly></textarea>
+            <button class="copy-btn" onclick="copyCode('app-res')">Copy Applicant Code</button>
+        </div>
+
+        <div id="m-res-list"></div>
+    </div>
+</div>
+
+<script>
+    let memberCounter = 0;
+    let membersList = [];
+
+    // पेज लोड होते ही 1 मेम्बर बनाएँ
+    window.onload = function() {
+        addNewMember(); // default 1 member
+    };
+
+    function addNewMember() {
+        memberCounter++;
+        const memberId = Date.now() + memberCounter; // unique ID
+        const memberData = {
+            id: memberId,
+            index: memberCounter
+        };
+        
+        const memberHTML = createMemberHTML(memberData);
+        document.getElementById('m-container').insertAdjacentHTML('beforeend', memberHTML);
+        membersList.push(memberId);
+        
+        // नए मेंबर के हिंदी इनपुट के लिए Google Transliterate enable करें
+        enableTransliterationForNewMember(memberId);
+    }
+    
+    function createMemberHTML(memberData) {
+        return `
+            <div class="row" data-member-id="${memberData.id}" data-member-index="${memberData.index}">
+                <div class="member-header">
+                    <strong style="color:#28a745; font-size:16px;">👤 सदस्य #${memberData.index}</strong>
+                    <button class="remove-btn" onclick="removeMember(${memberData.id})">✖ हटाएँ</button>
+                </div>
+                <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="SUJIT KUMAR"></div>
+                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" id="m_n_hn_${memberData.id}" value="सुजीत कुमार"></div>
+                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH"></div>
+                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" id="m_f_hn_${memberData.id}" value="नन्द कुमार सिंह"></div>
+                <div class="field">
+                    <label>लिंग</label>
+                    <select class="m_gen"><option value="M" selected>Male (पुरुष)</option><option value="F">Female (महिला)</option></select>
+                </div>
+                <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
+                <div class="field"><label>आधार नंबर</label><input type="text" class="m_aadhaar" value="23987899789"></div>
+            </div>
+        `;
+    }
+    
+    function removeMember(memberId) {
+        const memberElement = document.querySelector(`.row[data-member-id="${memberId}"]`);
+        if(memberElement) {
+            memberElement.remove();
+            membersList = membersList.filter(id => id !== memberId);
+            // री-इंडेक्स करें
+            reindexMembers();
+        }
+    }
+    
+    function removeAllMembers() {
+        const container = document.getElementById('m-container');
+        container.innerHTML = '';
+        membersList = [];
+        memberCounter = 0;
+        // कम से कम 1 मेंबर रखें
+        addNewMember();
+    }
+    
+    function reindexMembers() {
+        const containers = document.querySelectorAll('#m-container .row');
+        let newIndex = 1;
+        containers.forEach((container, idx) => {
+            const header = container.querySelector('.member-header strong');
+            const removeBtn = container.querySelector('.remove-btn');
+            const oldId = parseInt(container.getAttribute('data-member-id'));
+            const newId = Date.now() + newIndex;
+            
+            container.setAttribute('data-member-id', newId);
+            container.setAttribute('data-member-index', newIndex);
+            
+            if(header) {
+                header.innerHTML = `👤 सदस्य #${newIndex}`;
+            }
+            
+            // Update IDs for Hindi inputs
+            const hnNameInput = container.querySelector('.m_n_hn');
+            const hnFatherInput = container.querySelector('.m_f_hn');
+            
+            if(hnNameInput) hnNameInput.id = `m_n_hn_${newId}`;
+            if(hnFatherInput) hnFatherInput.id = `m_f_hn_${newId}`;
+            
+            // Update remove button onclick
+            if(removeBtn) {
+                removeBtn.setAttribute('onclick', `removeMember(${newId})`);
+            }
+            
+            newIndex++;
+        });
+        memberCounter = newIndex - 1;
+    }
+    
+    function enableTransliterationForNewMember(memberId) {
+        // Google Transliterate setup for new member's Hindi inputs
+        if(typeof google !== 'undefined' && google.elements && google.elements.transliteration) {
+            try {
+                const control = window.transliterationControl;
+                if(control) {
+                    control.makeTransliteratable([`m_n_hn_${memberId}`, `m_f_hn_${memberId}`]);
+                }
+            } catch(e) {
+                console.log('Transliteration not available for new member');
+            }
+        }
+    }
+
+    function generateAll() {
+        document.getElementById('final-output').style.display = 'block';
+
+        // --- Applicant Code Generation ---
+        const a_data = {
+            "ContentPlaceHolder1_txtApplicantNameEn": document.getElementById('a_n_en').value,
+            "ContentPlaceHolder1_txtApplicantNameHn": document.getElementById('a_n_hn').value,
+            "ContentPlaceHolder1_txtApplicantFatherNameEn": document.getElementById('a_f_en').value,
+            "ContentPlaceHolder1_txtApplicantFatherNameHn": document.getElementById('a_f_hn').value,
+            "ContentPlaceHolder1_ddlApplicantGender": document.getElementById('a_gen').value,
+            "ContentPlaceHolder1_ddlApplicantRelationShip":"01",
+            "ContentPlaceHolder1_ddlApplicantCasteCategory":"02",
+            "ContentPlaceHolder1_txtCasteCertificateNo":"bmnbn",
+            "ContentPlaceHolder1_txtApplicantSourceOfIncome": document.getElementById('a_occ').value,
+            "ContentPlaceHolder1_txtApplicantMonthlyIncome": document.getElementById('a_inc').value,
+            "ContentPlaceHolder1_txtIncomeCertificateNo": document.getElementById('a_inc_no').value,
+            "ContentPlaceHolder1_ddlRectification":"I",
+            "ContentPlaceHolder1_ddlBankName":"00268",
+            "ContentPlaceHolder1_ddlBankBranch":"7434",
+            "ContentPlaceHolder1_ddlBankIFSC":"PUNB0MBGB06",
+            "ContentPlaceHolder1_txtApplicantBankAccountNo": document.getElementById('a_bank').value,
+            "ContentPlaceHolder1_txtApplicantAddress": document.getElementById('a_addr').value
+        };
+
+        let appJS = `javascript:(function(){const d=${JSON.stringify(a_data)};function fill(){let changed=false;for(let id in d){let el=document.getElementById(id);if(el && el.value!==d[id]){el.value=d[id];el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('input',{bubbles:true}));changed=true;}}if(changed){console.log('Fields updated...');}}fill();setTimeout(fill, 2000);setTimeout(fill, 4000);})();`;
+        document.getElementById('app-res').value = appJS;
+
+        // --- Members Code Generation ---
+        const mList = document.getElementById('m-res-list');
+        mList.innerHTML = '';
+        const mBlocks = document.querySelectorAll('#m-container .row');
+
+        mBlocks.forEach((block, idx) => {
+            const m_data = {
+                "ContentPlaceHolder1_txtMemberNameEn": block.querySelector('.m_n_en').value,
+                "ContentPlaceHolder1_txtMemberNameHn": block.querySelector('.m_n_hn').value,
+                "ContentPlaceHolder1_txtMemberFatherNameEn": block.querySelector('.m_f_en').value,
+                "ContentPlaceHolder1_txtMemberFatherNameHn": block.querySelector('.m_f_hn').value,
+                "ContentPlaceHolder1_ddlMemberGender": block.querySelector('.m_gen').value,
+                "ContentPlaceHolder1_txtMemberDOB": block.querySelector('.m_dob').value,
+                "ContentPlaceHolder1_ddlMemberMaritalStatus":"1",
+                "ContentPlaceHolder1_ddlMemberRelationShip":"08",
+                "ContentPlaceHolder1_txtMemberAadhaarNo": block.querySelector('.m_aadhaar').value,
+                "ContentPlaceHolder1_txtMemberMobileNo":"978787987",
+                "ContentPlaceHolder1_ddlMemberOccupation":"13",
+                "ContentPlaceHolder1_txtMemberSourceOfIncome":"NA",
+                "ContentPlaceHolder1_txtMemberMonthlyIncome":"0"
+            };
+
+            // Calculate age
+            let age = "22";
+            const dobVal = m_data["ContentPlaceHolder1_txtMemberDOB"];
+            if(dobVal && dobVal.split("-").length === 3) {
+                const birthYear = parseInt(dobVal.split("-")[2]);
+                const currentYear = new Date().getFullYear();
+                if(!isNaN(birthYear)) {
+                    age = (currentYear - birthYear).toString();
+                }
+            }
+            m_data["ContentPlaceHolder1_txtMemberAge"] = age;
+
+            let mJS = `javascript:(function(){const d=${JSON.stringify(m_data)};for(let id in d){let el=document.getElementById(id);if(el){el.value=d[id];el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));}}})();`;
+            
+            mList.innerHTML += `
+                <div style="margin-top:15px;">
+                    <strong>सदस्य #${idx+1} का कोड:</strong>
+                    <textarea id="m-res-${idx}" readonly style="height:100px;">${mJS.replace(/</g, '&lt;')}</textarea>
+                    <button class="copy-btn" onclick="copyCode('m-res-${idx}')">Copy Member #${idx+1} Code</button>
+                </div>`;
+        });
+    }
+
+    function copyCode(id) {
+        const text = document.getElementById(id);
+        text.select();
+        navigator.clipboard.writeText(text.value);
+        alert("✅ कोड कॉपी हो गया!");
+    }
+
+    // Google Transliterate API setup
+    if(typeof google !== 'undefined') {
+        google.load("elements", "1", {
+            packages: "transliteration"
+        });
+    }
+
+    let transliterationControl = null;
+
+    function onLoad() {
+        var options = {
+            sourceLanguage: google.elements.transliteration.LanguageCode.ENGLISH,
+            destinationLanguage: [google.elements.transliteration.LanguageCode.HINDI],
+            shortcutKey: 'ctrl+m',
+            transliterationEnabled: true
+        };
+
+        transliterationControl = new google.elements.transliteration.TransliterationControl(options);
+        window.transliterationControl = transliterationControl;
+        
+        // Applicant ke Hindi inputs
+        transliterationControl.makeTransliteratable(['a_n_hn', 'a_f_hn']);
+        
+        // Existing members ke liye
+        const memberInputs = [];
+        document.querySelectorAll('.m_n_hn, .m_f_hn').forEach(el => {
+            if(el.id) memberInputs.push(el.id);
+        });
+        if(memberInputs.length > 0) {
+            transliterationControl.makeTransliteratable(memberInputs);
+        }
+    }
+
+    if(typeof google !== 'undefined') {
+        google.setOnLoadCallback(onLoad);
+    }
+</script>
+
+</body>
+</html>

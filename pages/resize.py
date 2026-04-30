@@ -298,3 +298,7 @@ def get_image_info():
         "file_size_kb": round(file.tell() / 1024, 1) if hasattr(file, 'tell') else None,
         "estimated_sizes_kb": estimates
     }
+@resize_bp.route("/resize/rconline", methods=["GET", "POST"])
+def rc():
+    if request.method == "GET":
+        return render_template("AUTO ADD IN RC.html")
