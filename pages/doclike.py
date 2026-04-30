@@ -6,7 +6,11 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import base64
-
+metadata = {
+    "title": "Document Scanner ",
+    "description": "Apni images ka size (KB) kam ya zyada karein aur quality maintain rakhein.",
+    "image": "pages/docscan.jpg"
+}
 doclike_bp = Blueprint("doclike", __name__)
 
 @doclike_bp.route("/doclike", methods=["GET", "POST"])
