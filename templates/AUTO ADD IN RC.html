@@ -50,6 +50,7 @@
         <div class="field"><label>आय प्रमाण पत्र सं.</label><input type="text" id="a_inc_no" value="BICCO/2026/2887987"></div>
         <div class="field"><label>बैंक खाता सं.</label><input type="text" id="a_bank" value="989879709709"></div>
         <div class="field"><label>पूरा पता</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_addr" value="VILL-KATHAR KHURD,PO-CHAUKIYA,PS-KRISHNA BRAHM"></div>
+<div class="field"><label>mobile no.</label><input type="text" id="m_mobile" value="9341663558"></div>
     </div>
 
     <h2>2. परिवार के सदस्य (Members)</h2>
@@ -115,6 +116,18 @@
                     <label>लिंग</label>
                     <select class="m_gen"><option value="M" selected>Male (पुरुष)</option><option value="F">Female (महिला)</option></select>
                 </div>
+
+<div class="field">
+                    <label>सम्बन्ध </label>
+                    <select class="m_rel"><option value="02" selected>1. बहन</option><option value="03">2. भाई </option><option value="04">3. माँ </option><option value="05">4. बापू </option><option value="07">5. पति </option><option value="08">6. बेटा </option><option value="09">7. बेटी </option><option value="33">8. पोती </option><option value="34">9. पोता</option><option value="48">10. बहु </option></select>
+                </div>
+
+<div class="field">
+                    <label>बैवाहिक सिथिति  </label>
+                    <select class="m_sta"><option value="1" selected> 1. अविवाहिक </option><option value="2">2. विवाहिक </option><option value="3">3. विधवा</option></select>
+                </div>
+
+
                 <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
                 <div class="field"><label>आधार नंबर</label><input type="text" class="m_aadhaar" value="23987899789"></div>
             </div>
@@ -227,10 +240,10 @@
                 "ContentPlaceHolder1_txtMemberFatherNameHn": block.querySelector('.m_f_hn').value,
                 "ContentPlaceHolder1_ddlMemberGender": block.querySelector('.m_gen').value,
                 "ContentPlaceHolder1_txtMemberDOB": block.querySelector('.m_dob').value,
-                "ContentPlaceHolder1_ddlMemberMaritalStatus":"1",
-                "ContentPlaceHolder1_ddlMemberRelationShip":"08",
+                "ContentPlaceHolder1_ddlMemberMaritalStatus":block.querySelector('.m_sta').value,
+                "ContentPlaceHolder1_ddlMemberRelationShip":block.querySelector('.m_rel').value,
                 "ContentPlaceHolder1_txtMemberAadhaarNo": block.querySelector('.m_aadhaar').value,
-                "ContentPlaceHolder1_txtMemberMobileNo":"978787987",
+                "ContentPlaceHolder1_txtMemberMobileNo":document.getElementById('m_mobile').value,
                 "ContentPlaceHolder1_ddlMemberOccupation":"13",
                 "ContentPlaceHolder1_txtMemberSourceOfIncome":"NA",
                 "ContentPlaceHolder1_txtMemberMonthlyIncome":"0"
