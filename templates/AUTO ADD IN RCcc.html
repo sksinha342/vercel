@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <title>Ration Card Pro Generator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .box { background: #fff; border-radius: 12px; padding: 24px; max-width: 960px; margin: auto; box-shadow: 0 2px 16px rgba(0,0,0,0.10); }
+        h2 { color: #1a5276; border-left: 4px solid #2e86c1; padding-left: 10px; margin: 20px 0 14px; font-size: 17px; }
+        .row { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1px solid #dce3ea; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+        .field { display: flex; flex-direction: column; min-width: 200px; flex: 1; }
+        .field label { font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
+        .field input, .field select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: #fff; }
+        .field input:focus, .field select:focus { outline: none; border-color: #2e86c1; box-shadow: 0 0 0 2px #d6eaf8; }
+        .info-text { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: #1a5276; }
+        .btn-main { background: #2e86c1; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 14px; font-weight: 700; }
+        .btn-main:hover { background: #1a5276; }
+        .btn-add { background: #28a745; color: #fff; border: none; padding: 9px 20px; border-radius: 7px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .btn-add:hover { background: #1e7e34; }
+        .btn-remove { background: #dc3545; color: #fff; border: none; padding: 9px 20px; border-radius: 7px; font-size: 13px; cursor: pointer; font-weight: 600; }
+        .btn-remove:hover { background: #b02a37; }
+        .btn-search { background: #fd7e14; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 700; }
+        .btn-search:hover { background: #c96a0e; }
+        .btn-clear { background: #6c757d; color: #fff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 700; }
+        .btn-clear:hover { background: #5a6268; }
+        .member-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .remove-btn { background: #dc3545; color: #fff; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .output { margin-top: 20px; background: #1e1e2e; border-radius: 10px; padding: 20px; }
+        .output h3 { color: #a9dc76; margin-bottom: 16px; font-size: 16px; }
+        textarea { width: 100%; height: 80px; background: #2a2a3e; color: #a9dc76; border: 1px solid #444; border-radius: 6px; padding: 10px; font-size: 12px; font-family: monospace; resize: vertical; }
+        .copy-btn { background: #4ade80; color: #111; border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700; margin-top: 6px; }
+        .copy-btn:hover { background: #22c55e; }
+        .search-box { background: #fff8e6; border: 1px solid #f0b429; border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+        .search-box h3 { color: #b45309; margin-bottom: 12px; font-size: 15px; }
+        .search-input-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+        .search-input-row .field { flex: 1; min-width: 160px; }
+        .status-msg { padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-top: 10px; display: none; }
+        .status-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .warning-text { color: #dc3545; font-size: 12px; margin-top: 4px; display: none; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <div class="info-text">
+        💡 <strong>टिप:</strong> नया सदस्य जोड़ने के लिए नीचे "सदस्य जोड़ें" बटन दबाएं। 
+        किसी सदस्य को हटाने के लिए उसके हेडर में <strong style="color:#dc3545;">✖ हटाएँ</strong> बटन दबाएं।
+    </div>
+
+    <!-- ===== SEARCH BOX ===== -->
+    <div class="search-box">
+        <h3>🔍 पुराना डेटा खोजें</h3>
+        <div class="search-input-row">
+            <div class="field">
+                <label>Jan Prichay ID (user_id)</label>
+                <input type="text" id="search_user_id" placeholder="जैसे: rinki342">
+            </div>
+            <div class="field">
+                <label>RC No</label>
+                <input type="text" id="search_rc_no" placeholder="RC नंबर डालें">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-search" onclick="searchData()">🔍 खोजें</button>
+                <button class="btn-clear" onclick="clearSearch()">🗑 Clear</button>
+            </div>
+        </div>
+        <div id="search-status" class="status-msg"></div>
+        <div id="search-result-output" style="display:none; margin-top:14px;">
+            <h4 style="color:#b45309; margin-bottom:10px;">📋 मिला हुआ डेटा:</h4>
+            <div id="search-codes"></div>
+            <button class="btn-main" onclick="loadSearchToForm()" style="margin-top:10px; padding:8px 16px; font-size:13px;">📝 फॉर्म में लोड करें</button>
+        </div>
+    </div>
+
+    <h2>1. आवेदिका का विवरण (Applicant)</h2>
+
+    <div class="row" id="app-form">
+        <div class="field"><label>नाम (English)</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR"></div>
+        <div class="field"><label>नाम (हिंदी)</label><input type="text" id="a_n_hn" value="सुजीत कुमार"></div>
+        <div class="field"><label>पिता/पति (English)</label><input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH"></div>
+        <div class="field"><label>पिता/पति (हिंदी)</label><input type="text" id="a_f_hn" value="नन्द कुमार सिंह"></div>
+        <div class="field">
+            <label>लिंग</label>
+            <select id="a_gen"><option value="F" selected>Female (महिला)</option><option value="M">Male (पुरुष)</option></select>
+        </div>
+        <div class="field"><label>व्यवसाय/आय का स्रोत</label><input type="text" id="a_occ" value="कृषि"></div>
+        <div class="field"><label>मासिक आय</label><input type="number" id="a_inc" value="8000"></div>
+        <div class="field"><label>आय प्रमाण पत्र सं.</label><input type="text" id="a_inc_no" value="BICCO/2026/2887987"></div>
+        <div class="field"><label>बैंक खाता सं.</label><input type="text" id="a_bank" value="989879709709"></div>
+        <div class="field"><label>पूरा पता</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_addr" value="VILL-KATHAR KHURD,PO-CHAUKIYA,PS-KRISHNA BRAHM"></div>
+        <div class="field"><label>Mobile No.</label><input type="text" id="m_mobile" value="9341663558"></div>
+        <div class="field"><label>RC No</label><input type="text" id="rc_no" value="10300010098032520147"></div>
+        <div class="field"><label>Jan Prichay ID</label><input type="text" id="user_id" value="rinki342"></div>
+    </div>
+
+    <h2>2. परिवार के सदस्य (Members)</h2>
+    <div style="margin-bottom: 20px;">
+        <button onclick="addNewMember()" class="btn-add" style="margin-right: 10px;">+ नया सदस्य जोड़ें</button>
+        <button onclick="removeAllMembers()" class="btn-remove" style="background:#dc3545;">सभी सदस्य हटाएँ</button>
+    </div>
+    
+    <div id="m-container"></div>
+
+    <div class="btn-row">
+        <button onclick="generateAndSave()" class="btn-main">⚡ JS Code Generate & Save करें</button>
+    </div>
+
+    <div id="save-status" class="status-msg"></div>
+
+    <div id="final-output" class="output" style="display:none;">
+        <h3>जनरेट किया हुआ कोड (Bookmarklets)</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <strong style="color:#a9dc76;">आवेदिका का कोड:</strong>
+            <textarea id="app-res" readonly></textarea>
+            <button class="copy-btn" onclick="copyCode('app-res')">Copy Applicant Code</button>
+        </div>
+
+        <div id="m-res-list"></div>
+    </div>
+</div>
+
+<script>
+    let memberCounter = 0;
+    let membersList = [];
+    let lastSearchResult = null;
+
+    window.onload = function() {
+        addNewMember();
+    };
+
+    function addNewMember() {
+        memberCounter++;
+        const memberId = Date.now() + memberCounter;
+        const memberData = { id: memberId, index: memberCounter };
+        const memberHTML = createMemberHTML(memberData);
+        document.getElementById('m-container').insertAdjacentHTML('beforeend', memberHTML);
+        membersList.push(memberId);
+    }
+    
+    function createMemberHTML(memberData) {
+        return `
+            <div class="row" data-member-id="${memberData.id}" data-member-index="${memberData.index}">
+                <div class="member-header">
+                    <strong style="color:#28a745; font-size:16px;">👤 सदस्य #${memberData.index}</strong>
+                    <button class="remove-btn" onclick="removeMember(${memberData.id})">✖ हटाएँ</button>
+                </div>
+                <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME"></div>
+                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम"></div>
+                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME"></div>
+                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम"></div>
+                <div class="field">
+                    <label>लिंग</label>
+                    <select class="m_gen"><option value="M" selected>Male (पुरुष)</option><option value="F">Female (महिला)</option></select>
+                </div>
+                <div class="field">
+                    <label>सम्बन्ध</label>
+                    <select class="m_rel">
+                        <option value="02" selected>1. बहन</option>
+                        <option value="03">2. भाई</option>
+                        <option value="04">3. माँ</option>
+                        <option value="05">4. बापू</option>
+                        <option value="07">5. पति</option>
+                        <option value="08">6. बेटा</option>
+                        <option value="09">7. बेटी</option>
+                        <option value="33">8. पोती</option>
+                        <option value="34">9. पोता</option>
+                        <option value="48">10. बहु</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>वैवाहिक स्थिति</label>
+                    <select class="m_sta">
+                        <option value="1" selected>1. अविवाहित</option>
+                        <option value="2">2. विवाहित</option>
+                        <option value="3">3. विधवा</option>
+                    </select>
+                </div>
+                <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
+                <div class="field">
+                    <label>आधार नंबर</label>
+                    <input type="text" class="m_aadhaar">
+                </div>
+            </div>
+        `;
+    }
+    
+    function removeMember(memberId) {
+        const memberElement = document.querySelector(`.row[data-member-id="${memberId}"]`);
+        if(memberElement) {
+            memberElement.remove();
+            membersList = membersList.filter(id => id !== memberId);
+            reindexMembers();
+        }
+    }
+    
+    function removeAllMembers() {
+        document.getElementById('m-container').innerHTML = '';
+        membersList = [];
+        memberCounter = 0;
+        addNewMember();
+    }
+    
+    function reindexMembers() {
+        const containers = document.querySelectorAll('#m-container .row');
+        let newIndex = 1;
+        containers.forEach((container) => {
+            const header = container.querySelector('.member-header strong');
+            const removeBtn = container.querySelector('.remove-btn');
+            const newId = Date.now() + newIndex;
+            container.setAttribute('data-member-id', newId);
+            container.setAttribute('data-member-index', newIndex);
+            if(header) header.innerHTML = `👤 सदस्य #${newIndex}`;
+            if(removeBtn) removeBtn.setAttribute('onclick', `removeMember(${newId})`);
+            newIndex++;
+        });
+        memberCounter = newIndex - 1;
+    }
+
+    // Generate JS Code exactly like page does
+    function generateMemberJS(member, mobile, index) {
+        let age = "20";
+        if(member.dob && member.dob.split("-").length === 3) {
+            const birthYear = parseInt(member.dob.split("-")[2]);
+            if(!isNaN(birthYear)) age = (new Date().getFullYear() - birthYear).toString();
+        }
+
+        const m_data = {
+            "ContentPlaceHolder1_txtMemberNameEn": member.name_en,
+            "ContentPlaceHolder1_txtMemberNameHn": member.name_hn,
+            "ContentPlaceHolder1_txtMemberFatherNameEn": member.father_en,
+            "ContentPlaceHolder1_txtMemberFatherNameHn": member.father_hn,
+            "ContentPlaceHolder1_ddlMemberGender": member.gender,
+            "ContentPlaceHolder1_txtMemberDOB": member.dob,
+            "ContentPlaceHolder1_ddlMemberMaritalStatus": member.marital_status,
+            "ContentPlaceHolder1_ddlMemberRelationShip": member.relation,
+            "ContentPlaceHolder1_txtMemberAadhaarNo": member.aadhaar,
+            "ContentPlaceHolder1_txtMemberMobileNo": mobile,
+            "ContentPlaceHolder1_ddlMemberOccupation": "13",
+            "ContentPlaceHolder1_txtMemberSourceOfIncome": "NA",
+            "ContentPlaceHolder1_txtMemberMonthlyIncome": "0",
+            "ContentPlaceHolder1_txtMemberAge": age
+        };
+
+        return `javascript:(function(){const d=${JSON.stringify(m_data)};for(let id in d){let el=document.getElementById(id);if(el){el.value=d[id];el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));}}})();`;
+    }
+
+    function generateApplicantJS(applicant, rc_no) {
+        const a_data = {
+            "ContentPlaceHolder1_txtRationCardNo": rc_no,
+            "ContentPlaceHolder1_txtApplicantNameEn": applicant.name_en,
+            "ContentPlaceHolder1_txtApplicantNameHn": applicant.name_hn,
+            "ContentPlaceHolder1_txtApplicantFatherNameEn": applicant.father_en,
+            "ContentPlaceHolder1_txtApplicantFatherNameHn": applicant.father_hn,
+            "ContentPlaceHolder1_ddlApplicantGender": applicant.gender,
+            "ContentPlaceHolder1_ddlApplicantRelationShip": "01",
+            "ContentPlaceHolder1_ddlApplicantCasteCategory": "02",
+            "ContentPlaceHolder1_txtCasteCertificateNo": "bmnbn",
+            "ContentPlaceHolder1_txtApplicantSourceOfIncome": applicant.occupation,
+            "ContentPlaceHolder1_txtApplicantMonthlyIncome": applicant.income,
+            "ContentPlaceHolder1_txtIncomeCertificateNo": applicant.income_cert_no,
+            "ContentPlaceHolder1_ddlRectification": "I",
+            "ContentPlaceHolder1_ddlBankName": "00268",
+            "ContentPlaceHolder1_ddlBankBranch": "7434",
+            "ContentPlaceHolder1_ddlBankIFSC": "PUNB0MBGB06",
+            "ContentPlaceHolder1_txtApplicantBankAccountNo": applicant.bank_acc,
+            "ContentPlaceHolder1_txtApplicantAddress": applicant.address
+        };
+
+        return `javascript:(function(){const d=${JSON.stringify(a_data)};function fill(){let changed=false;for(let id in d){let el=document.getElementById(id);if(el && el.value!==d[id]){el.value=d[id];el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('input',{bubbles:true}));changed=true;}}if(changed){console.log('Fields updated...');}}fill();setTimeout(fill, 2000);setTimeout(fill, 4000);})();`;
+    }
+
+    // Collect form data
+    function collectFormData() {
+        const applicant = {
+            name_en: document.getElementById('a_n_en').value,
+            name_hn: document.getElementById('a_n_hn').value,
+            father_en: document.getElementById('a_f_en').value,
+            father_hn: document.getElementById('a_f_hn').value,
+            gender: document.getElementById('a_gen').value,
+            occupation: document.getElementById('a_occ').value,
+            income: document.getElementById('a_inc').value,
+            income_cert_no: document.getElementById('a_inc_no').value,
+            bank_acc: document.getElementById('a_bank').value,
+            address: document.getElementById('a_addr').value
+        };
+
+        const members = [];
+        document.querySelectorAll('#m-container .row').forEach(block => {
+            members.push({
+                name_en: block.querySelector('.m_n_en').value,
+                name_hn: block.querySelector('.m_n_hn').value,
+                father_en: block.querySelector('.m_f_en').value,
+                father_hn: block.querySelector('.m_f_hn').value,
+                gender: block.querySelector('.m_gen').value,
+                relation: block.querySelector('.m_rel').value,
+                marital_status: block.querySelector('.m_sta').value,
+                dob: block.querySelector('.m_dob').value,
+                aadhaar: block.querySelector('.m_aadhaar').value
+            });
+        });
+
+        return {
+            user_id: document.getElementById('user_id').value,
+            rc_no: document.getElementById('rc_no').value,
+            mobile: document.getElementById('m_mobile').value,
+            applicant,
+            members
+        };
+    }
+
+    // Generate and Save together
+    async function generateAndSave() {
+        const formData = collectFormData();
+        const { applicant, members, user_id, rc_no, mobile } = formData;
+        
+        if (!user_id) {
+            showStatus('save-status', '❌ Please enter User ID', 'error');
+            return;
+        }
+        
+        // Generate JS codes exactly as shown on page
+        const applicantJS = generateApplicantJS(applicant, rc_no);
+        
+        const memberJSList = [];
+        members.forEach((member, idx) => {
+            const memberJS = generateMemberJS(member, mobile, idx);
+            memberJSList.push({
+                js_code: memberJS,
+                name_en: member.name_en,
+                index: idx + 1,
+                data: member
+            });
+        });
+        
+        // Display in output
+        document.getElementById('final-output').style.display = 'block';
+        document.getElementById('app-res').value = applicantJS;
+        
+        const mList = document.getElementById('m-res-list');
+        mList.innerHTML = '';
+        memberJSList.forEach((m, idx) => {
+            mList.innerHTML += `
+                <div style="margin-top:15px;">
+                    <strong style="color:#a9dc76;">सदस्य #${m.index} (${m.name_en}) का कोड:</strong>
+                    <textarea id="m-res-${idx}" readonly>${escapeHtml(m.js_code)}</textarea>
+                    <button class="copy-btn" onclick="copyCode('m-res-${idx}')">Copy Member #${m.index} Code</button>
+                </div>`;
+        });
+        
+        // Save to database
+        showStatus('save-status', '⏳ Database में save हो रहा है...', 'info');
+        
+        try {
+            const response = await fetch('/rconline/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_id: user_id,
+                    rc_no: rc_no,
+                    mobile: mobile,
+                    applicant: applicant,
+                    members: members,
+                    applicant_js: applicantJS,
+                    members_js: memberJSList
+                })
+            });
+            const result = await response.json();
+            
+            if(result.success) {
+                showStatus('save-status', result.message, 'success');
+            } else {
+                showStatus('save-status', result.message, 'error');
+            }
+        } catch(err) {
+            showStatus('save-status', '❌ Network error: ' + err.message, 'error');
+        }
+    }
+    
+    // Search Function
+    async function searchData() {
+        const searchUserId = document.getElementById('search_user_id').value.trim();
+        const searchRcNo = document.getElementById('search_rc_no').value.trim();
+        
+        if(!searchUserId && !searchRcNo) {
+            showStatus('search-status', '❌ user_id या RC No में से कोई एक जरूर डालें', 'error');
+            return;
+        }
+        
+        showStatus('search-status', '⏳ खोज रहे हैं...', 'info');
+        document.getElementById('search-result-output').style.display = 'none';
+        
+        const params = new URLSearchParams();
+        if(searchUserId) params.append('user_id', searchUserId);
+        if(searchRcNo) params.append('rc_no', searchRcNo);
+        
+        try {
+            const response = await fetch('/rconline/search?' + params.toString());
+            const result = await response.json();
+            
+            if(result.success) {
+                lastSearchResult = result;
+                showStatus('search-status', `✅ मिला! Total ${result.total_members} सदस्य`, 'success');
+                
+                const codesDiv = document.getElementById('search-codes');
+                codesDiv.innerHTML = `
+                    <div style="background:#e9ecef; padding:12px; border-radius:8px; margin-bottom:10px;">
+                        <strong>User ID:</strong> ${escapeHtml(result.applicant_name)}<br>
+                        <strong>Total Members:</strong> ${result.total_members}
+                    </div>
+                `;
+                
+                // Applicant JS Code
+                codesDiv.innerHTML += `
+                    <div style="margin-bottom:14px;">
+                        <strong>📋 आवेदिका का JS Code:</strong>
+                        <textarea id="s-app-res" readonly style="height:70px;">${escapeHtml(result.applicant_js)}</textarea>
+                        <button class="copy-btn" onclick="copyCode('s-app-res')">Copy Applicant Code</button>
+                    </div>
+                `;
+                
+                // Members JS Codes
+                if(result.members && result.members.length > 0) {
+                    result.members.forEach((m, idx) => {
+                        codesDiv.innerHTML += `
+                            <div style="margin-bottom:14px;">
+                                <strong>👤 सदस्य #${m.index} (${escapeHtml(m.name_en)}) का JS Code:</strong>
+                                <textarea id="s-m-res-${idx}" readonly style="height:70px;">${escapeHtml(m.js_code)}</textarea>
+                                <button class="copy-btn" onclick="copyCode('s-m-res-${idx}')">Copy Member #${m.index} Code</button>
+                            </div>
+                        `;
+                    });
+                }
+                
+                document.getElementById('search-result-output').style.display = 'block';
+            } else {
+                showStatus('search-status', result.message, 'error');
+                document.getElementById('search-result-output').style.display = 'none';
+            }
+        } catch(err) {
+            showStatus('search-status', '❌ Network error: ' + err.message, 'error');
+        }
+    }
+    
+    // Load search result to form
+    async function loadSearchToForm() {
+        if (!lastSearchResult) {
+            showStatus('search-status', '❌ पहले खोज करें', 'error');
+            return;
+        }
+        
+        showStatus('search-status', '⏳ फॉर्म में लोड हो रहा है...', 'info');
+        
+        try {
+            const params = new URLSearchParams();
+            params.append('user_id', lastSearchResult.applicant_name);
+            const response = await fetch('/rconline/load?' + params.toString());
+            const result = await response.json();
+            
+            if(result.success) {
+                // Load applicant data
+                document.getElementById('user_id').value = result.user_id;
+                document.getElementById('rc_no').value = result.rc_no;
+                document.getElementById('m_mobile').value = result.mobile;
+                
+                if(result.applicant_data) {
+                    document.getElementById('a_n_en').value = result.applicant_data.name_en || '';
+                    document.getElementById('a_n_hn').value = result.applicant_data.name_hn || '';
+                    document.getElementById('a_f_en').value = result.applicant_data.father_en || '';
+                    document.getElementById('a_f_hn').value = result.applicant_data.father_hn || '';
+                    document.getElementById('a_gen').value = result.applicant_data.gender || 'F';
+                    document.getElementById('a_occ').value = result.applicant_data.occupation || '';
+                    document.getElementById('a_inc').value = result.applicant_data.income || '';
+                    document.getElementById('a_inc_no').value = result.applicant_data.income_cert_no || '';
+                    document.getElementById('a_bank').value = result.applicant_data.bank_acc || '';
+                    document.getElementById('a_addr').value = result.applicant_data.address || '';
+                }
+                
+                // Load members
+                removeAllMembers();
+                if(result.members && result.members.length > 0) {
+                    result.members.forEach((member, idx) => {
+                        if (idx > 0) addNewMember();
+                        const memberBlock = document.querySelectorAll('#m-container .row')[idx];
+                        if (memberBlock) {
+                            memberBlock.querySelector('.m_n_en').value = member.name_en || '';
+                            memberBlock.querySelector('.m_n_hn').value = member.name_hn || '';
+                            memberBlock.querySelector('.m_f_en').value = member.father_en || '';
+                            memberBlock.querySelector('.m_f_hn').value = member.father_hn || '';
+                            memberBlock.querySelector('.m_gen').value = member.gender || 'M';
+                            memberBlock.querySelector('.m_rel').value = member.relation || '02';
+                            memberBlock.querySelector('.m_sta').value = member.marital_status || '1';
+                            memberBlock.querySelector('.m_dob').value = member.dob || '';
+                            memberBlock.querySelector('.m_aadhaar').value = member.aadhaar || '';
+                        }
+                    });
+                }
+                
+                showStatus('search-status', '✅ डेटा फॉर्म में लोड हो गया!', 'success');
+                setTimeout(() => {
+                    document.getElementById('search-status').style.display = 'none';
+                }, 2000);
+            } else {
+                showStatus('search-status', result.message, 'error');
+            }
+        } catch(err) {
+            showStatus('search-status', '❌ Load error: ' + err.message, 'error');
+        }
+    }
+    
+    function clearSearch() {
+        document.getElementById('search_user_id').value = '';
+        document.getElementById('search_rc_no').value = '';
+        document.getElementById('search-status').style.display = 'none';
+        document.getElementById('search-result-output').style.display = 'none';
+        lastSearchResult = null;
+    }
+    
+    function showStatus(elementId, message, type) {
+        const el = document.getElementById(elementId);
+        el.style.display = 'block';
+        el.className = `status-msg status-${type}`;
+        el.textContent = message;
+        setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    
+    function copyCode(id) {
+        const text = document.getElementById(id);
+        text.select();
+        navigator.clipboard.writeText(text.value);
+        alert("✅ कोड कॉपी हो गया!");
+    }
+</script>
+
+</body>
+</html>
