@@ -4,6 +4,13 @@ from psycopg2.extras import RealDictCursor
 import json
 import logging
 
+# Metadata for Dashboard
+metadata = {
+    "title": "Auto Add name in ration card",
+    "description": "ration card me name add krne ka js code.",
+    "image": "pages/rconline.jpg"
+}
+
 # Setup logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
