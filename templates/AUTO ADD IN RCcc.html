@@ -64,88 +64,129 @@
         // Debounce timer for smoother real-time translation
         let translationTimeout = {};
 
-        function initializeHindiInputs() {
-            const hindiInputFields = document.querySelectorAll('[id$="_hn"], [class$="_hn"]');
-            hindiInputFields.forEach((field) => {
-                const fieldId = field.id || `field_${Math.random()}`;
-                field.dataset.fieldId = fieldId;
+        // Sync English name fields to Hindi fields
+        function setupNameFieldSync() {
+            // Applicant name sync
+            const appEnglishField = document.getElementById('a_n_en');
+            const appHindiField = document.getElementById('a_n_hn');
+            
+            if (appEnglishField && appHindiField) {
+                setupFieldPair(appEnglishField, appHindiField);
+            }
+
+            // Applicant father name sync
+            const appFatherEnField = document.getElementById('a_f_en');
+            const appFatherHnField = document.getElementById('a_f_hn');
+            
+            if (appFatherEnField && appFatherHnField) {
+                setupFieldPair(appFatherEnField, appFatherHnField);
+            }
+        }
+
+        function setupFieldPair(englishField, hindiField) {
+            englishField.addEventListener('input', async function(e) {
+                let englishText = this.value;
                 
-                field.addEventListener('input', function(e) {
-                    const cursorPos = this.selectionStart;
-                    let currentValue = this.value;
-                    const fieldKey = this.dataset.fieldId;
-                    
-                    // Normalize spaces - prevent multiple consecutive spaces
-                    currentValue = currentValue.replace(/\s+/g, ' ');
-                    
-                    // Remove trailing matras (vowel modifiers)
-                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
-                    if (currentValue.length > 0 && hindiMatras.includes(currentValue[currentValue.length - 1])) {
-                        currentValue = currentValue.slice(0, -1);
-                    }
-                    
-                    // Update field if it changed
-                    if (this.value !== currentValue) {
-                        this.value = currentValue;
-                    }
-                    
-                    // Show translating indicator
-                    this.style.borderColor = '#ffc107';
-                    this.style.boxShadow = '0 0 0 2px #fff8e1';
-                    
-                    // Clear previous timeout
-                    if (translationTimeout[fieldKey]) {
-                        clearTimeout(translationTimeout[fieldKey]);
-                    }
-                    
-                    // Increased debounce: wait 1.2 seconds after user stops typing
-                    translationTimeout[fieldKey] = setTimeout(async () => {
-                        try {
-                            const translated = await translateToHindi(currentValue);
-                            if (translated && translated !== currentValue) {
-                                this.value = translated;
-                                this.setSelectionRange(Math.min(cursorPos, this.value.length), Math.min(cursorPos, this.value.length));
-                            }
+                // Don't translate if empty
+                if (!englishText || englishText.trim().length === 0) {
+                    hindiField.value = '';
+                    return;
+                }
+
+                // Real-time translation as user types
+                const cursorPos = this.selectionStart;
+                const fieldKey = `${englishField.id}_${hindiField.id}`;
+                
+                // Show translating indicator
+                hindiField.style.borderColor = '#ffc107';
+                hindiField.style.boxShadow = '0 0 0 2px #fff8e1';
+                
+                // Clear previous timeout
+                if (translationTimeout[fieldKey]) {
+                    clearTimeout(translationTimeout[fieldKey]);
+                }
+                
+                // Debounce translation
+                translationTimeout[fieldKey] = setTimeout(async () => {
+                    try {
+                        const translated = await translateToHindi(englishText);
+                        if (translated) {
+                            hindiField.value = translated;
                             // Success - green border
-                            this.style.borderColor = '#28a745';
-                            this.style.boxShadow = '0 0 0 2px #d4edda';
+                            hindiField.style.borderColor = '#28a745';
+                            hindiField.style.boxShadow = '0 0 0 2px #d4edda';
                             setTimeout(() => {
-                                if (this.value === translated) {
-                                    this.style.borderColor = '#ccc';
-                                    this.style.boxShadow = 'none';
-                                }
-                            }, 1500);
-                        } catch(err) {
-                            // Error - red border
-                            this.style.borderColor = '#dc3545';
-                            this.style.boxShadow = '0 0 0 2px #f8d7da';
-                            setTimeout(() => {
-                                this.style.borderColor = '#ccc';
-                                this.style.boxShadow = 'none';
-                            }, 2000);
+                                hindiField.style.borderColor = '#ccc';
+                                hindiField.style.boxShadow = 'none';
+                            }, 1000);
                         }
-                    }, 1200); // 1.2 second delay
-                });
-                
-                // Reset border on focus
-                field.addEventListener('focus', function() {
-                    this.style.borderColor = '#2e86c1';
-                    this.style.boxShadow = '0 0 0 2px #d6eaf8';
-                });
-                
-                // Reset border on blur
-                field.addEventListener('blur', function() {
-                    // Final cleanup: remove any trailing spaces or matras
-                    let finalValue = this.value.trim();
-                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
-                    while (finalValue.length > 0 && hindiMatras.includes(finalValue[finalValue.length - 1])) {
-                        finalValue = finalValue.slice(0, -1);
+                    } catch(err) {
+                        console.log('Translation error:', err);
+                        hindiField.style.borderColor = '#dc3545';
+                        hindiField.style.boxShadow = '0 0 0 2px #f8d7da';
+                        setTimeout(() => {
+                            hindiField.style.borderColor = '#ccc';
+                            hindiField.style.boxShadow = 'none';
+                        }, 1500);
                     }
-                    this.value = finalValue.trim();
-                    this.style.borderColor = '#ccc';
-                    this.style.boxShadow = 'none';
-                });
+                }, 800);
             });
+
+            // Handle backspace and deletion sync
+            hindiField.addEventListener('input', function(e) {
+                let hindiText = this.value;
+                
+                // Normalize spaces
+                hindiText = hindiText.replace(/\s+/g, ' ');
+                
+                // Remove trailing matras
+                const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
+                while (hindiText.length > 0 && hindiMatras.includes(hindiText[hindiText.length - 1])) {
+                    hindiText = hindiText.slice(0, -1);
+                }
+                
+                this.value = hindiText.trim();
+            });
+
+            // Add focus styles
+            hindiField.addEventListener('focus', function() {
+                this.style.borderColor = '#2e86c1';
+                this.style.boxShadow = '0 0 0 2px #d6eaf8';
+            });
+
+            hindiField.addEventListener('blur', function() {
+                this.style.borderColor = '#ccc';
+                this.style.boxShadow = 'none';
+            });
+        }
+
+        // Initialize member name sync when new member is added
+        function initializeHindiInputs() {
+            const memberRows = document.querySelectorAll('[data-member-id]');
+            memberRows.forEach((row) => {
+                const memberEnglishName = row.querySelector('.m_n_en');
+                const memberHindiName = row.querySelector('.m_n_hn');
+                const memberEnglishFather = row.querySelector('.m_f_en');
+                const memberHindiFather = row.querySelector('.m_f_hn');
+
+                if (memberEnglishName && memberHindiName) {
+                    // Remove old listeners by cloning
+                    const newEnglishName = memberEnglishName.cloneNode(true);
+                    memberEnglishName.parentNode.replaceChild(newEnglishName, memberEnglishName);
+                    const newHindiName = memberHindiName.cloneNode(true);
+                    memberHindiName.parentNode.replaceChild(newHindiName, memberHindiName);
+                    setupFieldPair(newEnglishName, newHindiName);
+                }
+
+                if (memberEnglishFather && memberHindiFather) {
+                    const newEnglishFather = memberEnglishFather.cloneNode(true);
+                    memberEnglishFather.parentNode.replaceChild(newEnglishFather, memberEnglishFather);
+                    const newHindiFather = memberHindiFather.cloneNode(true);
+                    memberHindiFather.parentNode.replaceChild(newHindiFather, memberHindiFather);
+                    setupFieldPair(newEnglishFather, newHindiFather);
+                }
+            });
+        }
         }
 
         window.addEventListener('load', function() {
@@ -290,52 +331,11 @@
     let membersList = [];
     let lastSearchResult = null;
 
-    // Initialize Hindi transliteration
-    function initializeHindiTransliteration() {
-        const hindiInputFields = document.querySelectorAll('[id$="_hn"], [class$="_hn"]');
-        hindiInputFields.forEach(field => {
-            field.addEventListener('input', function(e) {
-                try {
-                    const text = this.value;
-                    // Use indic-transliterate library to convert English to Hindi
-                    const converted = window.IndicTransliterate.transliterate({
-                        text: text,
-                        lang: 'hi'
-                    });
-                    if (converted && converted !== text) {
-                        this.value = converted;
-                    }
-                } catch(err) {
-                    // Library not loaded yet, will try again
-                }
-            });
-
-            // Also support space key for instant conversion
-            field.addEventListener('keydown', function(e) {
-                if (e.code === 'Space' || e.key === ' ') {
-                    try {
-                        const text = this.value + ' ';
-                        const converted = window.IndicTransliterate.transliterate({
-                            text: text,
-                            lang: 'hi'
-                        });
-                        if (converted) {
-                            this.value = converted;
-                            e.preventDefault();
-                        }
-                    } catch(err) {
-                        // Continue with normal space
-                    }
-                }
-            });
-        });
-    }
+    // Initialize Hindi transliteration (removed - using auto-sync instead)
 
     window.onload = function() {
-        // Wait for library to load
-        setTimeout(() => {
-            initializeHindiTransliteration();
-        }, 500);
+        // Initialize name field syncing (English → Hindi)
+        setupNameFieldSync();
         addNewMember();
     };
 
