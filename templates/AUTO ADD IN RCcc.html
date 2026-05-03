@@ -25,6 +25,7 @@
     <meta name="robots" content="index, follow">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     
+    <script src="https://www.google.com/inputtools/js/lang_hi.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
@@ -70,10 +71,7 @@
 <body>
 
 <div class="box">
-    <div class="info-text">
-        💡 <strong>टिप:</strong> नया सदस्य जोड़ने के लिए नीचे "सदस्य जोड़ें" बटन दबाएं। 
-        किसी सदस्य को हटाने के लिए उसके हेडर में <strong style="color:#dc3545;">✖ हटाएँ</strong> बटन दबाएं।
-    </div>
+    
 
     <!-- ===== SEARCH BOX ===== -->
     <div class="search-box">
@@ -104,9 +102,9 @@
 
     <div class="row" id="app-form">
         <div class="field"><label>नाम (English)</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR"></div>
-        <div class="field"><label>नाम (हिंदी)</label><input type="text" id="a_n_hn" value="सुजीत कुमार"></div>
+        <div class="field"><label>नाम (हिंदी)</label><input type="text" id="a_n_hn" value="सुजीत कुमार" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
         <div class="field"><label>पिता/पति (English)</label><input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH"></div>
-        <div class="field"><label>पिता/पति (हिंदी)</label><input type="text" id="a_f_hn" value="नन्द कुमार सिंह"></div>
+        <div class="field"><label>पिता/पति (हिंदी)</label><input type="text" id="a_f_hn" value="नन्द कुमार सिंह" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
         <div class="field">
             <label>लिंग</label>
             <select id="a_gen"><option value="F" selected>Female (महिला)</option><option value="M">Male (पुरुष)</option></select>
@@ -114,6 +112,7 @@
         <div class="field"><label>व्यवसाय/आय का स्रोत</label><input type="text" id="a_occ" value="कृषि"></div>
         <div class="field"><label>मासिक आय</label><input type="number" id="a_inc" value="8000"></div>
         <div class="field"><label>आय प्रमाण पत्र सं.</label><input type="text" id="a_inc_no" value="BICCO/2026/2887987"></div>
+        <div class="field"><label>jati प्रमाण पत्र सं.</label><input type="text" id="a_cas_no" value="BCCCO/2026/2887987"></div>
         <div class="field"><label>बैंक खाता सं.</label><input type="text" id="a_bank" value="989879709709"></div>
         <div class="field"><label>पूरा पता</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_addr" value="VILL-KATHAR KHURD,PO-CHAUKIYA,PS-KRISHNA BRAHM"></div>
         <div class="field"><label>Mobile No.</label><input type="text" id="m_mobile" value="9341663558"></div>
@@ -153,8 +152,21 @@
     let membersList = [];
     let lastSearchResult = null;
 
+    function onSubmit(language, text) {
+        // Google Input Tools callback - text is the converted text
+        return true;
+    }
+
+    function initializeHindiInputTools() {
+        const hindiInputFields = document.querySelectorAll('[id$="_hn"], [class$="_hn"]');
+        hindiInputFields.forEach(field => {
+            google.inputtools.addEventListener(field, 'submit', onSubmit);
+        });
+    }
+
     window.onload = function() {
         addNewMember();
+        initializeHindiInputTools();
     };
 
     function addNewMember() {
@@ -164,6 +176,8 @@
         const memberHTML = createMemberHTML(memberData);
         document.getElementById('m-container').insertAdjacentHTML('beforeend', memberHTML);
         membersList.push(memberId);
+        // Re-initialize Hindi input tools for newly added members
+        initializeHindiInputTools();
     }
     
     function createMemberHTML(memberData) {
@@ -174,9 +188,9 @@
                     <button class="remove-btn" onclick="removeMember(${memberData.id})">✖ हटाएँ</button>
                 </div>
                 <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME"></div>
-                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम"></div>
-                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME"></div>
-                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम"></div>
+                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
+                <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
+                
                 <div class="field">
                     <label>लिंग</label>
                     <select class="m_gen"><option value="M" selected>Male (पुरुष)</option><option value="F">Female (महिला)</option></select>
@@ -194,6 +208,7 @@
                         <option value="33">8. पोती</option>
                         <option value="34">9. पोता</option>
                         <option value="48">10. बहु</option>
+                        <option value="06">11. patani</option>
                     </select>
                 </div>
                 <div class="field">
@@ -204,9 +219,11 @@
                         <option value="3">3. विधवा</option>
                     </select>
                 </div>
-                <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
+                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME"></div>
+                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
                 <div class="field">
                     <label>आधार नंबर</label>
+                    
                     <input type="text" class="m_aadhaar">
                 </div>
             </div>
@@ -283,7 +300,7 @@
             "ContentPlaceHolder1_ddlApplicantGender": applicant.gender,
             "ContentPlaceHolder1_ddlApplicantRelationShip": "01",
             "ContentPlaceHolder1_ddlApplicantCasteCategory": "02",
-            "ContentPlaceHolder1_txtCasteCertificateNo": "bmnbn",
+            "ContentPlaceHolder1_txtCasteCertificateNo": applicant.cas_cert_no,
             "ContentPlaceHolder1_txtApplicantSourceOfIncome": applicant.occupation,
             "ContentPlaceHolder1_txtApplicantMonthlyIncome": applicant.income,
             "ContentPlaceHolder1_txtIncomeCertificateNo": applicant.income_cert_no,
@@ -309,6 +326,8 @@
             occupation: document.getElementById('a_occ').value,
             income: document.getElementById('a_inc').value,
             income_cert_no: document.getElementById('a_inc_no').value,
+            
+            cas_cert_no: document.getElementById('a_cas_no').value,
             bank_acc: document.getElementById('a_bank').value,
             address: document.getElementById('a_addr').value
         };
@@ -500,6 +519,7 @@
                     document.getElementById('a_occ').value = result.applicant_data.occupation || '';
                     document.getElementById('a_inc').value = result.applicant_data.income || '';
                     document.getElementById('a_inc_no').value = result.applicant_data.income_cert_no || '';
+                    document.getElementById('a_cas_no').value = result.applicant_data.cas_cert_no || '';
                     document.getElementById('a_bank').value = result.applicant_data.bank_acc || '';
                     document.getElementById('a_addr').value = result.applicant_data.address || '';
                 }
