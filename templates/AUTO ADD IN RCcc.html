@@ -25,7 +25,133 @@
     <meta name="robots" content="index, follow">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     
-    <script src="https://www.google.com/inputtools/js/lang_hi.js"></script>
+    <script>
+        // MyMemory Translation API - Free, No API Key Required
+        // Works same as Google Translate, completely free and reliable
+        
+        async function translateToHindi(englishText) {
+            if (!englishText || englishText.trim().length === 0) return '';
+            
+            try {
+                // Clean input: remove extra spaces, trim
+                let cleanText = englishText.trim().replace(/\s+/g, ' ');
+                
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=en|hi`,
+                    { timeout: 8000 }
+                );
+                const data = await response.json();
+                
+                if (data.responseStatus === 200 && data.responseData.translatedText) {
+                    let result = data.responseData.translatedText;
+                    // Clean output: normalize spaces and remove stray matras
+                    result = result.replace(/\s+/g, ' ').trim();
+                    
+                    // Remove trailing matras (vowel modifiers) that shouldn't be at the end
+                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
+                    while (result.length > 0 && hindiMatras.includes(result[result.length - 1])) {
+                        result = result.slice(0, -1);
+                    }
+                    
+                    return result;
+                }
+            } catch(err) {
+                console.log('Translation API (will retry):', err.message);
+            }
+            return '';
+        }
+
+        // Debounce timer for smoother real-time translation
+        let translationTimeout = {};
+
+        function initializeHindiInputs() {
+            const hindiInputFields = document.querySelectorAll('[id$="_hn"], [class$="_hn"]');
+            hindiInputFields.forEach((field) => {
+                const fieldId = field.id || `field_${Math.random()}`;
+                field.dataset.fieldId = fieldId;
+                
+                field.addEventListener('input', function(e) {
+                    const cursorPos = this.selectionStart;
+                    let currentValue = this.value;
+                    const fieldKey = this.dataset.fieldId;
+                    
+                    // Normalize spaces - prevent multiple consecutive spaces
+                    currentValue = currentValue.replace(/\s+/g, ' ');
+                    
+                    // Remove trailing matras (vowel modifiers)
+                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
+                    if (currentValue.length > 0 && hindiMatras.includes(currentValue[currentValue.length - 1])) {
+                        currentValue = currentValue.slice(0, -1);
+                    }
+                    
+                    // Update field if it changed
+                    if (this.value !== currentValue) {
+                        this.value = currentValue;
+                    }
+                    
+                    // Show translating indicator
+                    this.style.borderColor = '#ffc107';
+                    this.style.boxShadow = '0 0 0 2px #fff8e1';
+                    
+                    // Clear previous timeout
+                    if (translationTimeout[fieldKey]) {
+                        clearTimeout(translationTimeout[fieldKey]);
+                    }
+                    
+                    // Increased debounce: wait 1.2 seconds after user stops typing
+                    translationTimeout[fieldKey] = setTimeout(async () => {
+                        try {
+                            const translated = await translateToHindi(currentValue);
+                            if (translated && translated !== currentValue) {
+                                this.value = translated;
+                                this.setSelectionRange(Math.min(cursorPos, this.value.length), Math.min(cursorPos, this.value.length));
+                            }
+                            // Success - green border
+                            this.style.borderColor = '#28a745';
+                            this.style.boxShadow = '0 0 0 2px #d4edda';
+                            setTimeout(() => {
+                                if (this.value === translated) {
+                                    this.style.borderColor = '#ccc';
+                                    this.style.boxShadow = 'none';
+                                }
+                            }, 1500);
+                        } catch(err) {
+                            // Error - red border
+                            this.style.borderColor = '#dc3545';
+                            this.style.boxShadow = '0 0 0 2px #f8d7da';
+                            setTimeout(() => {
+                                this.style.borderColor = '#ccc';
+                                this.style.boxShadow = 'none';
+                            }, 2000);
+                        }
+                    }, 1200); // 1.2 second delay
+                });
+                
+                // Reset border on focus
+                field.addEventListener('focus', function() {
+                    this.style.borderColor = '#2e86c1';
+                    this.style.boxShadow = '0 0 0 2px #d6eaf8';
+                });
+                
+                // Reset border on blur
+                field.addEventListener('blur', function() {
+                    // Final cleanup: remove any trailing spaces or matras
+                    let finalValue = this.value.trim();
+                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
+                    while (finalValue.length > 0 && hindiMatras.includes(finalValue[finalValue.length - 1])) {
+                        finalValue = finalValue.slice(0, -1);
+                    }
+                    this.value = finalValue.trim();
+                    this.style.borderColor = '#ccc';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        }
+
+        window.addEventListener('load', function() {
+            setTimeout(initializeHindiInputs, 500);
+        });
+    </script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
@@ -101,10 +227,22 @@
     <h2>1. आवेदिका का विवरण (Applicant)</h2>
 
     <div class="row" id="app-form">
-        <div class="field"><label>नाम (English)</label><input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR"></div>
-        <div class="field"><label>नाम (हिंदी)</label><input type="text" id="a_n_hn" value="सुजीत कुमार" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
-        <div class="field"><label>पिता/पति (English)</label><input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH"></div>
-        <div class="field"><label>पिता/पति (हिंदी)</label><input type="text" id="a_f_hn" value="नन्द कुमार सिंह" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
+        <div class="field">
+            <label>नाम (English)</label>
+            <input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR" placeholder="नाम अंग्रेजी में दर्ज करें">
+        </div>
+        <div class="field">
+            <label>नाम (हिंदी)</label>
+            <input type="text" id="a_n_hn" value="सुजीत कुमार" placeholder="या फिर यहाँ हिंदी में लिखें - स्वचालित रूप से अनुवादित होगा">
+        </div>
+        <div class="field">
+            <label>पिता/पति (English)</label>
+            <input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH" placeholder="पिता/पति का नाम अंग्रेजी में">
+        </div>
+        <div class="field">
+            <label>पिता/पति (हिंदी)</label>
+            <input type="text" id="a_f_hn" value="नन्द कुमार सिंह" placeholder="या यहाँ हिंदी में - स्वचालित अनुवाद होगा">
+        </div>
         <div class="field">
             <label>लिंग</label>
             <select id="a_gen"><option value="F" selected>Female (महिला)</option><option value="M">Male (पुरुष)</option></select>
@@ -152,21 +290,53 @@
     let membersList = [];
     let lastSearchResult = null;
 
-    function onSubmit(language, text) {
-        // Google Input Tools callback - text is the converted text
-        return true;
-    }
-
-    function initializeHindiInputTools() {
+    // Initialize Hindi transliteration
+    function initializeHindiTransliteration() {
         const hindiInputFields = document.querySelectorAll('[id$="_hn"], [class$="_hn"]');
         hindiInputFields.forEach(field => {
-            google.inputtools.addEventListener(field, 'submit', onSubmit);
+            field.addEventListener('input', function(e) {
+                try {
+                    const text = this.value;
+                    // Use indic-transliterate library to convert English to Hindi
+                    const converted = window.IndicTransliterate.transliterate({
+                        text: text,
+                        lang: 'hi'
+                    });
+                    if (converted && converted !== text) {
+                        this.value = converted;
+                    }
+                } catch(err) {
+                    // Library not loaded yet, will try again
+                }
+            });
+
+            // Also support space key for instant conversion
+            field.addEventListener('keydown', function(e) {
+                if (e.code === 'Space' || e.key === ' ') {
+                    try {
+                        const text = this.value + ' ';
+                        const converted = window.IndicTransliterate.transliterate({
+                            text: text,
+                            lang: 'hi'
+                        });
+                        if (converted) {
+                            this.value = converted;
+                            e.preventDefault();
+                        }
+                    } catch(err) {
+                        // Continue with normal space
+                    }
+                }
+            });
         });
     }
 
     window.onload = function() {
+        // Wait for library to load
+        setTimeout(() => {
+            initializeHindiTransliteration();
+        }, 500);
         addNewMember();
-        initializeHindiInputTools();
     };
 
     function addNewMember() {
@@ -176,8 +346,10 @@
         const memberHTML = createMemberHTML(memberData);
         document.getElementById('m-container').insertAdjacentHTML('beforeend', memberHTML);
         membersList.push(memberId);
-        // Re-initialize Hindi input tools for newly added members
-        initializeHindiInputTools();
+        // Re-initialize Hindi transliteration for newly added members
+        setTimeout(() => {
+            initializeHindiInputs();
+        }, 100);
     }
     
     function createMemberHTML(memberData) {
@@ -187,8 +359,8 @@
                     <strong style="color:#28a745; font-size:16px;">👤 सदस्य #${memberData.index}</strong>
                     <button class="remove-btn" onclick="removeMember(${memberData.id})">✖ हटाएँ</button>
                 </div>
-                <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME"></div>
-                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
+                <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME" placeholder="सदस्य का नाम अंग्रेजी में"></div>
+                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम" placeholder="स्वचालित अनुवाद के लिए हिंदी में लिखें"></div>
                 <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
                 
                 <div class="field">
@@ -219,8 +391,8 @@
                         <option value="3">3. विधवा</option>
                     </select>
                 </div>
-                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME"></div>
-                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम" onload="google.inputtools.addEventListener(this, 'submit', onSubmit);"></div>
+                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME" placeholder="पिता का नाम अंग्रेजी में"></div>
+                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम" placeholder="हिंदी में दर्ज करें - स्वचालित अनुवाद होगा"></div>
                 <div class="field">
                     <label>आधार नंबर</label>
                     
