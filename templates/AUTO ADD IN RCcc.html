@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Ration Card Pro Generator</title>
-<meta property="og:url" content="https://sksinha342.vercel.app/rconline">
+    <meta property="og:url" content="https://sksinha342.vercel.app/rconline">
     <meta property="og:image" content="https://res.cloudinary.com/dj1mpwooh/image/upload/v1777659085/hwoi3i6kxeip4rwnazcg.jpg">
     <meta name="title" content="Auto Name Adder In RC">
     <meta name="description" content="Exprlore advanced python tools for Auto Working.">
@@ -17,182 +17,262 @@
     <meta property="twitter:description" content="Free and powerful Python utility tools for everyday tasks.">
     <meta property="twitter:image" content="./static/img/footer.jpg">
     <link rel="canonical" href="https://sksinha342.vercel.app/rconline">
-
-
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="author" content="SK Sinha 342">
     <meta name="robots" content="index, follow">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
-    
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         HINDI OFFLINE TRANSLITERATION ENGINE v3 (FIXED)
+         - अब शब्द के अंत में 'A' नहीं जुड़ेगा
+         - "GOND" → "गोंड" (सही), "RAHUL" → "राहुल" (सही)
+    ═══════════════════════════════════════════════════════════════ -->
     <script>
-        // MyMemory Translation API - Free, No API Key Required
-        // Works same as Google Translate, completely free and reliable
+    const NAME_DICT = {
+        // ── Male first names ──────────────────────────────────────────
+        "SUJIT":"सुजीत","SUJEET":"सुजीत","SURESH":"सुरेश","RAMESH":"रमेश","MAHESH":"महेश",
+        "DINESH":"दिनेश","GANESH":"गणेश","RAKESH":"राकेश","NARESH":"नरेश","YOGESH":"योगेश",
+        "RAJESH":"राजेश","MUKESH":"मुकेश","LOKESH":"लोकेश","UMESH":"उमेश","HITESH":"हितेश",
+        "NITESH":"नितेश","JITESH":"जितेश","RITESH":"रितेश","DEVESH":"देवेश","VIVEK":"विवेक",
+        "AAKASH":"आकाश","AKASH":"आकाश","VIKASH":"विकाश","VIKAS":"विकास",
+        "ARJUN":"अर्जुन","VARUN":"वरुण","TARUN":"तरुण","ARUN":"अरुण",
+        "PRANAV":"प्रणव","SAURAV":"सौरव","GAURAV":"गौरव","SOURAV":"सौरव",
+        "ANURAG":"अनुराग","ANUJ":"अनुज","ANUP":"अनूप","ANUPAM":"अनुपम",
+        "ABHISHEK":"अभिषेक","ABHINAV":"अभिनव","ABHIJIT":"अभिजीत",
+        "AMIT":"अमित","AMITABH":"अमिताभ","AJIT":"अजीत","AJAY":"अजय",
+        "VIJAY":"विजय","SANJAY":"संजय","RANJAY":"रंजय",
+        "SHYAM":"श्याम","RAM":"राम","HARI":"हरि","SHIV":"शिव",
+        "KRISHNA":"कृष्ण","MOHAN":"मोहन","SOHAN":"सोहन","ROHAN":"रोहन","MILAN":"मिलन",
+        "NIRAJ":"नीरज","NEERAJ":"नीरज","DEEPAK":"दीपक","DIPAK":"दीपक",
+        "PRADEEP":"प्रदीप","PRADIP":"प्रदीप","SANDEEP":"संदीप",
+        "SATISH":"सतीश","GIRISH":"गिरीश","RAMCHANDRA":"रामचंद्र",
+        "PRAKASH":"प्रकाश","SUBHASH":"सुभाष","ADARSH":"आदर्श",
+        "SANJIV":"संजीव","SANJEEV":"संजीव","MANOJ":"मनोज","SAROJ":"सरोज",
+        "BABLU":"बब्लू","PAPPU":"पप्पू","TINKU":"टिंकू","PINKU":"पिंकू","RINKU":"रिंकू",
+        "MANISH":"मनीष","MUNISH":"मुनीश","SUNIL":"सुनील","ANIL":"अनिल",
+        "MITHUN":"मिथुन","RATAN":"रतन","CHANDAN":"चंदन",
+        "VIMAL":"विमल","NIRMAL":"निर्मल","KAMAL":"कमल","BIMAL":"बिमल",
+        "DEVENDRA":"देवेंद्र","SURENDRA":"सुरेंद्र","NARENDRA":"नरेंद्र",
+        "MAHENDRA":"महेंद्र","RAJENDRA":"राजेंद्र","VIRENDRA":"वीरेंद्र",
+        "DHIRENDRA":"धीरेंद्र","GAJENDRA":"गजेंद्र","JITENDRA":"जितेंद्र",
+        "BHUPENDRA":"भूपेंद्र","UPENDRA":"उपेंद्र","KAPIL":"कपिल",
+        "GOPAL":"गोपाल","RAGHUNATH":"रघुनाथ","DEVNATH":"देवनाथ",
+        "BHOLANATH":"भोलानाथ","SHIVNATH":"शिवनाथ","RAMNATH":"रामनाथ",
+        "VISHWANATH":"विश्वनाथ","BAIDYANATH":"बैद्यनाथ",
+        "RAJAN":"राजन","RAJKUMAR":"राजकुमार","RAMKUMAR":"रामकुमार",
+        "NANDKUMAR":"नंदकुमार","NAND":"नंद",
+        "ADITYA":"आदित्य","RAHUL":"राहुल","GOND":"गोंड",
+        // ── Female first names ────────────────────────────────────────
+        "SUNITA":"सुनीता","ANITA":"अनीता","KAVITA":"कविता","SAVITA":"सविता",
+        "MAMTA":"ममता","MAMATA":"ममता","LAXMI":"लक्ष्मी","LAKSHMI":"लक्ष्मी",
+        "SHANTI":"शांति","RANI":"रानी","PUJA":"पूजा","POOJA":"पूजा",
+        "PRIYA":"प्रिया","RIYA":"रिया","SITA":"सीता","GITA":"गीता",
+        "GEETA":"गीता","REETA":"रीता","SEETA":"सीता","MEETA":"मीता","NEETA":"नीता",
+        "SARITA":"सरिता","KAMLA":"कमला","KAMLESH":"कमलेश","PUSHPA":"पुष्पा",
+        "USHA":"उषा","ASHA":"आशा","REKHA":"रेखा","SHEELA":"शीला","LEELA":"लीला",
+        "ARCHANA":"अर्चना","KALPANA":"कल्पना","VANDANA":"वंदना",
+        "PRATIMA":"प्रतिमा","PRATIBHA":"प्रतिभा","SUBHADRA":"सुभद्रा","SUDHA":"सुधा",
+        "MEENA":"मीना","SEEMA":"सीमा","REEMA":"रीमा","NEEMA":"नीमा",
+        "POONAM":"पूनम","PUNAM":"पूनम","SHOBHA":"शोभा",
+        "ABHA":"आभा","MONIKA":"मोनिका","MONICA":"मोनिका",
+        "SWETA":"श्वेता","SHWETA":"श्वेता","SWATI":"स्वाति",
+        "BHARTI":"भारती","BHARATI":"भारती",
+        "MANJU":"मंजू","SANJU":"संजू","RANJU":"रंजू","TANU":"तनु",
+        "NEHA":"नेहा","SNEHA":"स्नेहा","SONAL":"सोनल","SONALI":"सोनाली","KOMAL":"कोमल",
+        "NIRMALA":"निर्मला","VIMLA":"विमला","KAMALA":"कमला",
+        "INDIRA":"इंदिरा","MADHURI":"माधुरी",
+        "RINKI":"रिंकी","PINKI":"पिंकी","TINKI":"टिंकी","MINI":"मिनी","TINA":"टीना",
+        "MINA":"मीना","RINA":"रीना","BINA":"बीना","DINA":"दीना","HINA":"हिना",
+        "SHALINI":"शालिनी","NALINI":"नलिनी","MALINI":"मालिनी",
+        "GAYATRI":"गायत्री","SARASWATI":"सरस्वती","PARVATI":"पार्वती",
+        "DURGA":"दुर्गा","RADHA":"राधा","MEERA":"मीरा",
+        "NANDITA":"नंदिता","NANDINI":"नंदिनी","SHAKUNTALA":"शकुंतला",
+        "VIBHA":"विभा","DEVI":"देवी","MATA":"माता",
+        // ── Surnames ──────────────────────────────────────────────────
+        "KUMAR":"कुमार","KUMARI":"कुमारी","SINGH":"सिंह","SINHA":"सिन्हा",
+        "SHARMA":"शर्मा","VERMA":"वर्मा","GUPTA":"गुप्ता","YADAV":"यादव",
+        "PRASAD":"प्रसाद","MISHRA":"मिश्रा","TIWARI":"तिवारी",
+        "PANDEY":"पांडे","SHUKLA":"शुक्ला","DUBEY":"दुबे",
+        "TRIPATHI":"त्रिपाठी","UPADHYAY":"उपाध्याय","UPADHYAYA":"उपाध्याय",
+        "DWIVEDI":"द्विवेदी","TRIVEDI":"त्रिवेदी","CHATURVEDI":"चतुर्वेदी",
+        "JOSHI":"जोशी","PATHAK":"पाठक","SHASTRI":"शास्त्री","ACHARYA":"आचार्य",
+        "THAKUR":"ठाकुर","RAJPUT":"राजपूत","CHAUHAN":"चौहान",
+        "CHAUDHARY":"चौधरी","CHOUDHARY":"चौधरी","PATEL":"पटेल",
+        "MEHTA":"मेहता","SAXENA":"सक्सेना",
+        "SRIVASTAVA":"श्रीवास्तव","SHRIVASTAVA":"श्रीवास्तव",
+        "AGARWAL":"अग्रवाल","AGGARWAL":"अग्रवाल","BANSAL":"बंसल",
+        "MITTAL":"मित्तल","GOEL":"गोयल","GOYAL":"गोयल","JAIN":"जैन","SETH":"सेठ",
+        "MANDAL":"मंडल","MONDAL":"मंडल","PASWAN":"पासवान",
+        "MAHTO":"महतो","MAHATA":"महता","PASI":"पासी",
+        "DHANUK":"धानुक","BHUIYA":"भुइयाँ",
+        // ── Common words in addresses ─────────────────────────────────
+        "LAL":"लाल","BABU":"बाबू","SUNDER":"सुंदर","SUNDAR":"सुंदर",
+        "GANJ":"गंज","NAGAR":"नगर","BAZAR":"बाजार","TOLA":"टोला",
+        "KHURD":"खुर्द","KALAN":"कलाँ","GARH":"गढ़","DIH":"डीह",
+        "SHRI":"श्री","SMT":"श्रीमती","LATE":"स्वर्गीय","JI":"जी",
+        "SWAMI":"स्वामी","RAM":"राम","LAL":"लाल",
+    };
+
+    // Consonant mapping (बिना मात्रा के)
+    const CONS = {
+        'KSH':'क्ष','GY':'ज्ञ','SH':'श','SHH':'श','CH':'च','CHH':'छ','TH':'थ','PH':'फ','KH':'ख',
+        'GH':'घ','JH':'झ','DH':'ध','BH':'भ','NG':'ंग','NK':'ंक','NT':'ंत','ND':'ंद','NC':'ंच',
+        'TR':'त्र','PR':'प्र','BR':'ब्र','GR':'ग्र','DR':'द्र','KR':'क्र',
+        'ST':'स्त','SK':'स्क','SP':'स्प','SN':'स्न','SM':'स्म','SV':'स्व','SW':'स्व',
+        'T':'त','D':'द','N':'न','P':'प','B':'ब','M':'म','Y':'य','R':'र','L':'ल',
+        'V':'व','W':'व','S':'स','H':'ह','Z':'ज़','J':'ज','K':'क','G':'ग','C':'च','CHH':'छ'
+    };
+
+    // स्वर (पूर्ण रूप - जब व्यंजन पहले न हो)
+    const VOW_FULL = {
+        'AA':'आ','A':'अ','EE':'ई','II':'ई','OO':'ऊ','UU':'ऊ','E':'ए','AI':'ऐ',
+        'AU':'औ','O':'ओ','I':'इ','U':'उ','AY':'ए'
+    };
+
+    // मात्राएँ (जब व्यंजन के बाद आएँ)
+    const VOW_MATRA = {
+        'AA':'ा','A':'','EE':'ी','II':'ी','OO':'ू','UU':'ू','E':'े','AI':'ै',
+        'AU':'ौ','O':'ो','I':'ि','U':'ु','AY':'े'
+    };
+
+    function transliterateWord(word) {
+        if (!word) return '';
+        const up = word.toUpperCase().trim();
+        if (!up) return '';
         
-        async function translateToHindi(englishText) {
-            if (!englishText || englishText.trim().length === 0) return '';
+        // पहले डिक्शनरी में चेक करें
+        if (NAME_DICT[up]) return NAME_DICT[up];
+
+        let result = '';
+        let i = 0;
+        let lastWasConsonant = false;
+        let currentConsonant = '';
+
+        while (i < up.length) {
+            // 1. पहले consonant cluster check करें (लंबे से छोटे की तरफ)
+            let consMatch = null;
+            let consLength = 0;
+            for (const key of Object.keys(CONS).sort((a,b) => b.length - a.length)) {
+                if (up.startsWith(key, i)) {
+                    consMatch = key;
+                    consLength = key.length;
+                    break;
+                }
+            }
             
-            try {
-                // Clean input: remove extra spaces, trim
-                let cleanText = englishText.trim().replace(/\s+/g, ' ');
-                
-                const response = await fetch(
-                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=en|hi`,
-                    { timeout: 8000 }
-                );
-                const data = await response.json();
-                
-                if (data.responseStatus === 200 && data.responseData.translatedText) {
-                    let result = data.responseData.translatedText;
-                    // Clean output: normalize spaces and remove stray matras
-                    result = result.replace(/\s+/g, ' ').trim();
-                    
-                    // Remove trailing matras (vowel modifiers) that shouldn't be at the end
-                    const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
-                    while (result.length > 0 && hindiMatras.includes(result[result.length - 1])) {
-                        result = result.slice(0, -1);
+            if (consMatch) {
+                // अगर पिछला consonant था और हम नया consonant जोड़ रहे हैं
+                if (lastWasConsonant && result.length > 0) {
+                    result += '्';  // हलंत लगाएँ
+                }
+                result += CONS[consMatch];
+                lastWasConsonant = true;
+                currentConsonant = consMatch;
+                i += consLength;
+                continue;
+            }
+            
+            // 2. Vowel check करें
+            let vowMatch = null;
+            let vowLength = 0;
+            for (const key of Object.keys(VOW_FULL).sort((a,b) => b.length - a.length)) {
+                if (up.startsWith(key, i)) {
+                    vowMatch = key;
+                    vowLength = key.length;
+                    break;
+                }
+            }
+            
+            if (vowMatch) {
+                if (lastWasConsonant) {
+                    // व्यंजन के बाद स्वर → मात्रा लगाएँ
+                    const matra = VOW_MATRA[vowMatch];
+                    if (matra) {
+                        result += matra;
                     }
-                    
-                    return result;
+                    // अगर 'A' है तो कुछ न जोड़ें (व्यंजन के बाद default 'अ' नहीं)
+                } else {
+                    // पूर्ण स्वर लगाएँ (शब्द के शुरू में या व्यंजन के बिना)
+                    result += VOW_FULL[vowMatch];
                 }
-            } catch(err) {
-                console.log('Translation API (will retry):', err.message);
+                lastWasConsonant = false;
+                i += vowLength;
+                continue;
             }
-            return '';
-        }
-
-        // Debounce timer for smoother real-time translation
-        let translationTimeout = {};
-
-        // Sync English name fields to Hindi fields
-        function setupNameFieldSync() {
-            // Applicant name sync
-            const appEnglishField = document.getElementById('a_n_en');
-            const appHindiField = document.getElementById('a_n_hn');
             
-            if (appEnglishField && appHindiField) {
-                setupFieldPair(appEnglishField, appHindiField);
+            // 3. कोई अन्य character (ignoring)
+            i++;
+        }
+        
+        // शब्द के अंत में अगर last character consonant है तो कुछ न जोड़ें
+        // (पहले 'अ' जुड़ता था, अब नहीं जुड़ेगा)
+        
+        return result;
+    }
+
+    function convertNameToHindi(englishName) {
+        if (!englishName || !englishName.trim()) return '';
+        // पूरे नाम को split करके हर शब्द को transliterate करें
+        const words = englishName.trim().split(/\s+/);
+        const hindiWords = words.map(w => transliterateWord(w));
+        return hindiWords.join(' ');
+    }
+
+    // ── Setup a field pair: English → Hindi auto on SPACE / blur ─────────
+    function setupFieldPair(engEl, hinEl) {
+        if (!engEl || !hinEl) return;
+        // Clone to remove stale listeners
+        const eng = engEl.cloneNode(true);
+        const hin = hinEl.cloneNode(true);
+        engEl.parentNode.replaceChild(eng, engEl);
+        hinEl.parentNode.replaceChild(hin, hinEl);
+
+        eng.addEventListener('input', function() {
+            const val = this.value;
+            if (val.endsWith(' ')) {
+                const words = val.trimEnd();
+                if (words) {
+                    hin.value = convertNameToHindi(words) + ' ';
+                    flash(hin, '#28a745', '#d4edda');
+                }
             }
-
-            // Applicant father name sync
-            const appFatherEnField = document.getElementById('a_f_en');
-            const appFatherHnField = document.getElementById('a_f_hn');
-            
-            if (appFatherEnField && appFatherHnField) {
-                setupFieldPair(appFatherEnField, appFatherHnField);
-            }
-        }
-
-        function setupFieldPair(englishField, hindiField) {
-            englishField.addEventListener('input', async function(e) {
-                let englishText = this.value;
-                
-                // Don't translate if empty
-                if (!englishText || englishText.trim().length === 0) {
-                    hindiField.value = '';
-                    return;
-                }
-
-                // Real-time translation as user types
-                const cursorPos = this.selectionStart;
-                const fieldKey = `${englishField.id}_${hindiField.id}`;
-                
-                // Show translating indicator
-                hindiField.style.borderColor = '#ffc107';
-                hindiField.style.boxShadow = '0 0 0 2px #fff8e1';
-                
-                // Clear previous timeout
-                if (translationTimeout[fieldKey]) {
-                    clearTimeout(translationTimeout[fieldKey]);
-                }
-                
-                // Debounce translation
-                translationTimeout[fieldKey] = setTimeout(async () => {
-                    try {
-                        const translated = await translateToHindi(englishText);
-                        if (translated) {
-                            hindiField.value = translated;
-                            // Success - green border
-                            hindiField.style.borderColor = '#28a745';
-                            hindiField.style.boxShadow = '0 0 0 2px #d4edda';
-                            setTimeout(() => {
-                                hindiField.style.borderColor = '#ccc';
-                                hindiField.style.boxShadow = 'none';
-                            }, 1000);
-                        }
-                    } catch(err) {
-                        console.log('Translation error:', err);
-                        hindiField.style.borderColor = '#dc3545';
-                        hindiField.style.boxShadow = '0 0 0 2px #f8d7da';
-                        setTimeout(() => {
-                            hindiField.style.borderColor = '#ccc';
-                            hindiField.style.boxShadow = 'none';
-                        }, 1500);
-                    }
-                }, 800);
-            });
-
-            // Handle backspace and deletion sync
-            hindiField.addEventListener('input', function(e) {
-                let hindiText = this.value;
-                
-                // Normalize spaces
-                hindiText = hindiText.replace(/\s+/g, ' ');
-                
-                // Remove trailing matras
-                const hindiMatras = ['ा', 'ि', 'ी', 'ु', 'ू', 'े', 'ै', 'ो', 'ौ', '्', 'ः', 'ं', 'ँ'];
-                while (hindiText.length > 0 && hindiMatras.includes(hindiText[hindiText.length - 1])) {
-                    hindiText = hindiText.slice(0, -1);
-                }
-                
-                this.value = hindiText.trim();
-            });
-
-            // Add focus styles
-            hindiField.addEventListener('focus', function() {
-                this.style.borderColor = '#2e86c1';
-                this.style.boxShadow = '0 0 0 2px #d6eaf8';
-            });
-
-            hindiField.addEventListener('blur', function() {
-                this.style.borderColor = '#ccc';
-                this.style.boxShadow = 'none';
-            });
-        }
-
-        // Initialize member name sync when new member is added
-        function initializeHindiInputs() {
-            const memberRows = document.querySelectorAll('[data-member-id]');
-            memberRows.forEach((row) => {
-                const memberEnglishName = row.querySelector('.m_n_en');
-                const memberHindiName = row.querySelector('.m_n_hn');
-                const memberEnglishFather = row.querySelector('.m_f_en');
-                const memberHindiFather = row.querySelector('.m_f_hn');
-
-                if (memberEnglishName && memberHindiName) {
-                    // Remove old listeners by cloning
-                    const newEnglishName = memberEnglishName.cloneNode(true);
-                    memberEnglishName.parentNode.replaceChild(newEnglishName, memberEnglishName);
-                    const newHindiName = memberHindiName.cloneNode(true);
-                    memberHindiName.parentNode.replaceChild(newHindiName, memberHindiName);
-                    setupFieldPair(newEnglishName, newHindiName);
-                }
-
-                if (memberEnglishFather && memberHindiFather) {
-                    const newEnglishFather = memberEnglishFather.cloneNode(true);
-                    memberEnglishFather.parentNode.replaceChild(newEnglishFather, memberEnglishFather);
-                    const newHindiFather = memberHindiFather.cloneNode(true);
-                    memberHindiFather.parentNode.replaceChild(newHindiFather, memberHindiFather);
-                    setupFieldPair(newEnglishFather, newHindiFather);
-                }
-            });
-        }
-        }
-
-        window.addEventListener('load', function() {
-            setTimeout(initializeHindiInputs, 500);
         });
+        eng.addEventListener('blur', function() {
+            const val = this.value.trim();
+            if (val) {
+                hin.value = convertNameToHindi(val);
+                flash(hin, '#28a745', '#d4edda');
+            }
+        });
+        hin.addEventListener('focus', function() {
+            this.style.borderColor = '#2e86c1';
+            this.style.boxShadow = '0 0 0 2px #d6eaf8';
+        });
+        hin.addEventListener('blur', function() {
+            this.style.borderColor = '';
+            this.style.boxShadow = '';
+        });
+    }
+
+    function flash(el, color, bg) {
+        el.style.borderColor = color;
+        el.style.boxShadow = '0 0 0 2px ' + bg;
+        setTimeout(() => { el.style.borderColor = ''; el.style.boxShadow = ''; }, 900);
+    }
+
+    function setupNameFieldSync() {
+        setupFieldPair(document.getElementById('a_n_en'), document.getElementById('a_n_hn'));
+        setupFieldPair(document.getElementById('a_f_en'), document.getElementById('a_f_hn'));
+    }
+
+    function initializeHindiInputs() {
+        document.querySelectorAll('#m-container .row[data-member-id]').forEach(row => {
+            setupFieldPair(row.querySelector('.m_n_en'), row.querySelector('.m_n_hn'));
+            setupFieldPair(row.querySelector('.m_f_en'), row.querySelector('.m_f_hn'));
+        });
+    }
     </script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
@@ -201,8 +281,11 @@
         .row { display: flex; flex-wrap: wrap; gap: 12px; background: #f8fafc; border: 1px solid #dce3ea; border-radius: 8px; padding: 16px; margin-bottom: 14px; }
         .field { display: flex; flex-direction: column; min-width: 200px; flex: 1; }
         .field label { font-size: 12px; color: #666; margin-bottom: 4px; font-weight: 600; }
-        .field input, .field select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: #fff; }
+        .field input, .field select { padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; background: #fff; transition: border-color 0.3s, box-shadow 0.3s; }
         .field input:focus, .field select:focus { outline: none; border-color: #2e86c1; box-shadow: 0 0 0 2px #d6eaf8; }
+        .hindi-field { background: #fffbf0 !important; border-color: #e8c840 !important; }
+        .auto-badge { display: inline-block; background: #28a745; color: #fff; font-size: 9px; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+        .hindi-tip { font-size: 10px; color: #b8860b; margin-top: 2px; }
         .info-text { background: #eaf4fb; border: 1px solid #aed6f1; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; font-size: 13px; color: #1a5276; }
         .btn-main { background: #2e86c1; color: #fff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 14px; font-weight: 700; }
         .btn-main:hover { background: #1a5276; }
@@ -230,15 +313,12 @@
         .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
         .status-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
         .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-        .warning-text { color: #dc3545; font-size: 12px; margin-top: 4px; display: none; }
-        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
 <div class="box">
-    
+   
 
     <!-- ===== SEARCH BOX ===== -->
     <div class="search-box">
@@ -270,19 +350,21 @@
     <div class="row" id="app-form">
         <div class="field">
             <label>नाम (English)</label>
-            <input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR" placeholder="नाम अंग्रेजी में दर्ज करें">
+            <input oninput="this.value = this.value.toUpperCase()" type="text" id="a_n_en" value="SUJIT KUMAR" placeholder="नाम — Space दबाने पर Hindi भरेगी">
         </div>
         <div class="field">
-            <label>नाम (हिंदी)</label>
-            <input type="text" id="a_n_hn" value="सुजीत कुमार" placeholder="या फिर यहाँ हिंदी में लिखें - स्वचालित रूप से अनुवादित होगा">
+            <label>नाम (हिंदी) <span class="auto-badge">AUTO</span></label>
+            <input type="text" id="a_n_hn" value="सुजीत कुमार" placeholder="स्वचालित हिंदी" class="hindi-field">
+            
         </div>
         <div class="field">
             <label>पिता/पति (English)</label>
-            <input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH" placeholder="पिता/पति का नाम अंग्रेजी में">
+            <input type="text" id="a_f_en" oninput="this.value = this.value.toUpperCase()" value="NAND KUMAR SINGH" placeholder="पिता/पति — Space से Hindi">
         </div>
         <div class="field">
-            <label>पिता/पति (हिंदी)</label>
-            <input type="text" id="a_f_hn" value="नन्द कुमार सिंह" placeholder="या यहाँ हिंदी में - स्वचालित अनुवाद होगा">
+            <label>पिता/पति (हिंदी) <span class="auto-badge">AUTO</span></label>
+            <input type="text" id="a_f_hn" value="नन्द कुमार सिंह" placeholder="स्वचालित हिंदी" class="hindi-field">
+            
         </div>
         <div class="field">
             <label>लिंग</label>
@@ -315,13 +397,11 @@
 
     <div id="final-output" class="output" style="display:none;">
         <h3>जनरेट किया हुआ कोड (Bookmarklets)</h3>
-        
         <div style="margin-bottom: 20px;">
             <strong style="color:#a9dc76;">आवेदिका का कोड:</strong>
             <textarea id="app-res" readonly></textarea>
             <button class="copy-btn" onclick="copyCode('app-res')">Copy Applicant Code</button>
         </div>
-
         <div id="m-res-list"></div>
     </div>
 </div>
@@ -331,10 +411,7 @@
     let membersList = [];
     let lastSearchResult = null;
 
-    // Initialize Hindi transliteration (removed - using auto-sync instead)
-
     window.onload = function() {
-        // Initialize name field syncing (English → Hindi)
         setupNameFieldSync();
         addNewMember();
     };
@@ -342,14 +419,9 @@
     function addNewMember() {
         memberCounter++;
         const memberId = Date.now() + memberCounter;
-        const memberData = { id: memberId, index: memberCounter };
-        const memberHTML = createMemberHTML(memberData);
-        document.getElementById('m-container').insertAdjacentHTML('beforeend', memberHTML);
+        document.getElementById('m-container').insertAdjacentHTML('beforeend', createMemberHTML({id: memberId, index: memberCounter}));
         membersList.push(memberId);
-        // Re-initialize Hindi transliteration for newly added members
-        setTimeout(() => {
-            initializeHindiInputs();
-        }, 100);
+        setTimeout(() => { initializeHindiInputs(); }, 60);
     }
     
     function createMemberHTML(memberData) {
@@ -359,10 +431,16 @@
                     <strong style="color:#28a745; font-size:16px;">👤 सदस्य #${memberData.index}</strong>
                     <button class="remove-btn" onclick="removeMember(${memberData.id})">✖ हटाएँ</button>
                 </div>
-                <div class="field"><label>नाम (English)</label><input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME" placeholder="सदस्य का नाम अंग्रेजी में"></div>
-                <div class="field"><label>नाम (हिंदी)</label><input type="text" class="m_n_hn" value="सदस्य का नाम" placeholder="स्वचालित अनुवाद के लिए हिंदी में लिखें"></div>
+                <div class="field">
+                    <label>नाम (English)</label>
+                    <input type="text" class="m_n_en" oninput="this.value = this.value.toUpperCase()" value="MEMBER NAME" placeholder="Space दबाने पर Hindi भरेगी">
+                </div>
+                <div class="field">
+                    <label>नाम (हिंदी) <span class="auto-badge">AUTO</span></label>
+                    <input type="text" class="m_n_hn" value="सदस्य का नाम" placeholder="स्वचालित हिंदी" class="hindi-field">
+                   
+                </div>
                 <div class="field"><label>DOB (DD-MM-YYYY)</label><input type="text" class="m_dob" value="02-02-2006"></div>
-                
                 <div class="field">
                     <label>लिंग</label>
                     <select class="m_gen"><option value="M" selected>Male (पुरुष)</option><option value="F">Female (महिला)</option></select>
@@ -370,17 +448,12 @@
                 <div class="field">
                     <label>सम्बन्ध</label>
                     <select class="m_rel">
-                        <option value="02" selected>1. बहन</option>
-                        <option value="03">2. भाई</option>
-                        <option value="04">3. माँ</option>
-                        <option value="05">4. बापू</option>
-                        <option value="07">5. पति</option>
-                        <option value="08">6. बेटा</option>
-                        <option value="09">7. बेटी</option>
-                        <option value="33">8. पोती</option>
-                        <option value="34">9. पोता</option>
-                        <option value="48">10. बहु</option>
-                        <option value="06">11. patani</option>
+                        <option value="02" selected>1. बहन</option><option value="03">2. भाई</option>
+                        <option value="04">3. माँ</option><option value="05">4. बापू</option>
+                        <option value="07">5. पति</option><option value="08">6. बेटा</option>
+                        <option value="09">7. बेटी</option><option value="33">8. पोती</option>
+                        <option value="34">9. पोता</option><option value="48">10. बहु</option>
+                        <option value="06">11. पत्नी </option>
                     </select>
                 </div>
                 <div class="field">
@@ -391,58 +464,49 @@
                         <option value="3">3. विधवा</option>
                     </select>
                 </div>
-                <div class="field"><label>पिता का नाम (English)</label><input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME" placeholder="पिता का नाम अंग्रेजी में"></div>
-                <div class="field"><label>पिता का नाम (हिंदी)</label><input type="text" class="m_f_hn" value="पिता का नाम" placeholder="हिंदी में दर्ज करें - स्वचालित अनुवाद होगा"></div>
                 <div class="field">
-                    <label>आधार नंबर</label>
-                    
-                    <input type="text" class="m_aadhaar">
+                    <label>पिता का नाम (English)</label>
+                    <input type="text" class="m_f_en" oninput="this.value = this.value.toUpperCase()" value="FATHER NAME" placeholder="Space दबाने पर Hindi भरेगी">
                 </div>
-            </div>
-        `;
+                <div class="field">
+                    <label>पिता का नाम (हिंदी) <span class="auto-badge">AUTO</span></label>
+                    <input type="text" class="m_f_hn" value="पिता का नाम" placeholder="स्वचालित हिंदी" class="hindi-field">
+                    
+                </div>
+                <div class="field"><label>आधार नंबर</label><input type="text" class="m_aadhaar"></div>
+            </div>`;
     }
     
     function removeMember(memberId) {
-        const memberElement = document.querySelector(`.row[data-member-id="${memberId}"]`);
-        if(memberElement) {
-            memberElement.remove();
-            membersList = membersList.filter(id => id !== memberId);
-            reindexMembers();
-        }
+        const el = document.querySelector(`.row[data-member-id="${memberId}"]`);
+        if(el) { el.remove(); membersList = membersList.filter(id => id !== memberId); reindexMembers(); }
     }
-    
     function removeAllMembers() {
         document.getElementById('m-container').innerHTML = '';
-        membersList = [];
-        memberCounter = 0;
-        addNewMember();
+        membersList = []; memberCounter = 0; addNewMember();
     }
-    
     function reindexMembers() {
-        const containers = document.querySelectorAll('#m-container .row');
-        let newIndex = 1;
-        containers.forEach((container) => {
-            const header = container.querySelector('.member-header strong');
-            const removeBtn = container.querySelector('.remove-btn');
-            const newId = Date.now() + newIndex;
-            container.setAttribute('data-member-id', newId);
-            container.setAttribute('data-member-index', newIndex);
-            if(header) header.innerHTML = `👤 सदस्य #${newIndex}`;
-            if(removeBtn) removeBtn.setAttribute('onclick', `removeMember(${newId})`);
-            newIndex++;
+        let i = 1;
+        document.querySelectorAll('#m-container .row').forEach(c => {
+            const newId = Date.now() + i;
+            c.setAttribute('data-member-id', newId);
+            c.setAttribute('data-member-index', i);
+            const h = c.querySelector('.member-header strong');
+            const rb = c.querySelector('.remove-btn');
+            if(h) h.innerHTML = `👤 सदस्य #${i}`;
+            if(rb) rb.setAttribute('onclick', `removeMember(${newId})`);
+            i++;
         });
-        memberCounter = newIndex - 1;
+        memberCounter = i - 1;
     }
 
-    // Generate JS Code exactly like page does
     function generateMemberJS(member, mobile, index) {
         let age = "20";
         if(member.dob && member.dob.split("-").length === 3) {
-            const birthYear = parseInt(member.dob.split("-")[2]);
-            if(!isNaN(birthYear)) age = (new Date().getFullYear() - birthYear).toString();
+            const by = parseInt(member.dob.split("-")[2]);
+            if(!isNaN(by)) age = (new Date().getFullYear() - by).toString();
         }
-
-        const m_data = {
+        const d = {
             "ContentPlaceHolder1_txtMemberNameEn": member.name_en,
             "ContentPlaceHolder1_txtMemberNameHn": member.name_hn,
             "ContentPlaceHolder1_txtMemberFatherNameEn": member.father_en,
@@ -458,12 +522,11 @@
             "ContentPlaceHolder1_txtMemberMonthlyIncome": "0",
             "ContentPlaceHolder1_txtMemberAge": age
         };
-
-        return `javascript:(function(){const d=${JSON.stringify(m_data)};for(let id in d){let el=document.getElementById(id);if(el){el.value=d[id];el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));}}})();`;
+        return `javascript:(function(){const d=${JSON.stringify(d)};for(let id in d){let el=document.getElementById(id);if(el){el.value=d[id];el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur',{bubbles:true}));}}})();`;
     }
 
     function generateApplicantJS(applicant, rc_no) {
-        const a_data = {
+        const d = {
             "ContentPlaceHolder1_txtRationCardNo": rc_no,
             "ContentPlaceHolder1_txtApplicantNameEn": applicant.name_en,
             "ContentPlaceHolder1_txtApplicantNameHn": applicant.name_hn,
@@ -483,11 +546,9 @@
             "ContentPlaceHolder1_txtApplicantBankAccountNo": applicant.bank_acc,
             "ContentPlaceHolder1_txtApplicantAddress": applicant.address
         };
-
-        return `javascript:(function(){const d=${JSON.stringify(a_data)};function fill(){let changed=false;for(let id in d){let el=document.getElementById(id);if(el && el.value!==d[id]){el.value=d[id];el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('input',{bubbles:true}));changed=true;}}if(changed){console.log('Fields updated...');}}fill();setTimeout(fill, 2000);setTimeout(fill, 4000);})();`;
+        return `javascript:(function(){const d=${JSON.stringify(d)};function fill(){for(let id in d){let el=document.getElementById(id);if(el && el.value!==d[id]){el.value=d[id];el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('input',{bubbles:true}));}}}fill();setTimeout(fill,2000);setTimeout(fill,4000);})();`;
     }
 
-    // Collect form data
     function collectFormData() {
         const applicant = {
             name_en: document.getElementById('a_n_en').value,
@@ -498,12 +559,10 @@
             occupation: document.getElementById('a_occ').value,
             income: document.getElementById('a_inc').value,
             income_cert_no: document.getElementById('a_inc_no').value,
-            
             cas_cert_no: document.getElementById('a_cas_no').value,
             bank_acc: document.getElementById('a_bank').value,
             address: document.getElementById('a_addr').value
         };
-
         const members = [];
         document.querySelectorAll('#m-container .row').forEach(block => {
             members.push({
@@ -518,214 +577,100 @@
                 aadhaar: block.querySelector('.m_aadhaar').value
             });
         });
-
-        return {
-            user_id: document.getElementById('user_id').value,
-            rc_no: document.getElementById('rc_no').value,
-            mobile: document.getElementById('m_mobile').value,
-            applicant,
-            members
-        };
+        return { user_id: document.getElementById('user_id').value, rc_no: document.getElementById('rc_no').value, mobile: document.getElementById('m_mobile').value, applicant, members };
     }
 
-    // Generate and Save together
     async function generateAndSave() {
-        const formData = collectFormData();
-        const { applicant, members, user_id, rc_no, mobile } = formData;
-        
-        if (!user_id) {
-            showStatus('save-status', '❌ Please enter User ID', 'error');
-            return;
-        }
-        
-        // Generate JS codes exactly as shown on page
+        const { applicant, members, user_id, rc_no, mobile } = collectFormData();
+        if (!user_id) { showStatus('save-status', '❌ Please enter User ID', 'error'); return; }
         const applicantJS = generateApplicantJS(applicant, rc_no);
-        
-        const memberJSList = [];
-        members.forEach((member, idx) => {
-            const memberJS = generateMemberJS(member, mobile, idx);
-            memberJSList.push({
-                js_code: memberJS,
-                name_en: member.name_en,
-                index: idx + 1,
-                data: member
-            });
-        });
-        
-        // Display in output
+        const memberJSList = members.map((m, i) => ({ js_code: generateMemberJS(m, mobile, i), name_en: m.name_en, index: i + 1, data: m }));
         document.getElementById('final-output').style.display = 'block';
         document.getElementById('app-res').value = applicantJS;
-        
         const mList = document.getElementById('m-res-list');
         mList.innerHTML = '';
         memberJSList.forEach((m, idx) => {
-            mList.innerHTML += `
-                <div style="margin-top:15px;">
-                    <strong style="color:#a9dc76;">सदस्य #${m.index} (${m.name_en}) का कोड:</strong>
-                    <textarea id="m-res-${idx}" readonly>${escapeHtml(m.js_code)}</textarea>
-                    <button class="copy-btn" onclick="copyCode('m-res-${idx}')">Copy Member #${m.index} Code</button>
-                </div>`;
+            mList.innerHTML += `<div style="margin-top:15px;"><strong style="color:#a9dc76;">सदस्य #${m.index} (${m.name_en}) का कोड:</strong><textarea id="m-res-${idx}" readonly>${escapeHtml(m.js_code)}</textarea><button class="copy-btn" onclick="copyCode('m-res-${idx}')">Copy Member #${m.index} Code</button></div>`;
         });
-        
-        // Save to database
         showStatus('save-status', '⏳ Database में save हो रहा है...', 'info');
-        
         try {
-            const response = await fetch('/rconline/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: user_id,
-                    rc_no: rc_no,
-                    mobile: mobile,
-                    applicant: applicant,
-                    members: members,
-                    applicant_js: applicantJS,
-                    members_js: memberJSList
-                })
-            });
-            const result = await response.json();
-            
-            if(result.success) {
-                showStatus('save-status', result.message, 'success');
-            } else {
-                showStatus('save-status', result.message, 'error');
-            }
-        } catch(err) {
-            showStatus('save-status', '❌ Network error: ' + err.message, 'error');
-        }
+            const res = await fetch('/rconline/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id, rc_no, mobile, applicant, members, applicant_js: applicantJS, members_js: memberJSList }) });
+            const result = await res.json();
+            showStatus('save-status', result.message, result.success ? 'success' : 'error');
+        } catch(err) { showStatus('save-status', '❌ Network error: ' + err.message, 'error'); }
     }
     
-    // Search Function
     async function searchData() {
-        const searchUserId = document.getElementById('search_user_id').value.trim();
-        const searchRcNo = document.getElementById('search_rc_no').value.trim();
-        
-        if(!searchUserId && !searchRcNo) {
-            showStatus('search-status', '❌ user_id या RC No में से कोई एक जरूर डालें', 'error');
-            return;
-        }
-        
+        const uid = document.getElementById('search_user_id').value.trim();
+        const rcn = document.getElementById('search_rc_no').value.trim();
+        if(!uid && !rcn) { showStatus('search-status', '❌ user_id या RC No में से कोई एक जरूर डालें', 'error'); return; }
         showStatus('search-status', '⏳ खोज रहे हैं...', 'info');
         document.getElementById('search-result-output').style.display = 'none';
-        
         const params = new URLSearchParams();
-        if(searchUserId) params.append('user_id', searchUserId);
-        if(searchRcNo) params.append('rc_no', searchRcNo);
-        
+        if(uid) params.append('user_id', uid);
+        if(rcn) params.append('rc_no', rcn);
         try {
-            const response = await fetch('/rconline/search?' + params.toString());
-            const result = await response.json();
-            
+            const res = await fetch('/rconline/search?' + params.toString());
+            const result = await res.json();
             if(result.success) {
                 lastSearchResult = result;
                 showStatus('search-status', `✅ मिला! Total ${result.total_members} सदस्य`, 'success');
-                
-                const codesDiv = document.getElementById('search-codes');
-                codesDiv.innerHTML = `
-                    <div style="background:#e9ecef; padding:12px; border-radius:8px; margin-bottom:10px;">
-                        <strong>User ID:</strong> ${escapeHtml(result.applicant_name)}<br>
-                        <strong>Total Members:</strong> ${result.total_members}
-                    </div>
-                `;
-                
-                // Applicant JS Code
-                codesDiv.innerHTML += `
-                    <div style="margin-bottom:14px;">
-                        <strong>📋 आवेदिका का JS Code:</strong>
-                        <textarea id="s-app-res" readonly style="height:70px;">${escapeHtml(result.applicant_js)}</textarea>
-                        <button class="copy-btn" onclick="copyCode('s-app-res')">Copy Applicant Code</button>
-                    </div>
-                `;
-                
-                // Members JS Codes
-                if(result.members && result.members.length > 0) {
-                    result.members.forEach((m, idx) => {
-                        codesDiv.innerHTML += `
-                            <div style="margin-bottom:14px;">
-                                <strong>👤 सदस्य #${m.index} (${escapeHtml(m.name_en)}) का JS Code:</strong>
-                                <textarea id="s-m-res-${idx}" readonly style="height:70px;">${escapeHtml(m.js_code)}</textarea>
-                                <button class="copy-btn" onclick="copyCode('s-m-res-${idx}')">Copy Member #${m.index} Code</button>
-                            </div>
-                        `;
-                    });
-                }
-                
+                const div = document.getElementById('search-codes');
+                div.innerHTML = `<div style="background:#e9ecef;padding:12px;border-radius:8px;margin-bottom:10px;"><strong>User ID:</strong> ${escapeHtml(result.applicant_name)}<br><strong>Total Members:</strong> ${result.total_members}</div>`;
+                div.innerHTML += `<div style="margin-bottom:14px;"><strong>📋 आवेदिका का JS Code:</strong><textarea id="s-app-res" readonly style="height:70px;">${escapeHtml(result.applicant_js)}</textarea><button class="copy-btn" onclick="copyCode('s-app-res')">Copy Applicant Code</button></div>`;
+                (result.members || []).forEach((m, idx) => {
+                    div.innerHTML += `<div style="margin-bottom:14px;"><strong>👤 सदस्य #${m.index} (${escapeHtml(m.name_en)}) का JS Code:</strong><textarea id="s-m-res-${idx}" readonly style="height:70px;">${escapeHtml(m.js_code)}</textarea><button class="copy-btn" onclick="copyCode('s-m-res-${idx}')">Copy Member #${m.index} Code</button></div>`;
+                });
                 document.getElementById('search-result-output').style.display = 'block';
             } else {
                 showStatus('search-status', result.message, 'error');
                 document.getElementById('search-result-output').style.display = 'none';
             }
-        } catch(err) {
-            showStatus('search-status', '❌ Network error: ' + err.message, 'error');
-        }
+        } catch(err) { showStatus('search-status', '❌ Network error: ' + err.message, 'error'); }
     }
     
-    // Load search result to form
     async function loadSearchToForm() {
-        if (!lastSearchResult) {
-            showStatus('search-status', '❌ पहले खोज करें', 'error');
-            return;
-        }
-        
+        if (!lastSearchResult) { showStatus('search-status', '❌ पहले खोज करें', 'error'); return; }
         showStatus('search-status', '⏳ फॉर्म में लोड हो रहा है...', 'info');
-        
         try {
-            const params = new URLSearchParams();
-            params.append('user_id', lastSearchResult.applicant_name);
-            const response = await fetch('/rconline/load?' + params.toString());
-            const result = await response.json();
-            
+            const res = await fetch('/rconline/load?user_id=' + lastSearchResult.applicant_name);
+            const result = await res.json();
             if(result.success) {
-                // Load applicant data
                 document.getElementById('user_id').value = result.user_id;
                 document.getElementById('rc_no').value = result.rc_no;
                 document.getElementById('m_mobile').value = result.mobile;
-                
-                if(result.applicant_data) {
-                    document.getElementById('a_n_en').value = result.applicant_data.name_en || '';
-                    document.getElementById('a_n_hn').value = result.applicant_data.name_hn || '';
-                    document.getElementById('a_f_en').value = result.applicant_data.father_en || '';
-                    document.getElementById('a_f_hn').value = result.applicant_data.father_hn || '';
-                    document.getElementById('a_gen').value = result.applicant_data.gender || 'F';
-                    document.getElementById('a_occ').value = result.applicant_data.occupation || '';
-                    document.getElementById('a_inc').value = result.applicant_data.income || '';
-                    document.getElementById('a_inc_no').value = result.applicant_data.income_cert_no || '';
-                    document.getElementById('a_cas_no').value = result.applicant_data.cas_cert_no || '';
-                    document.getElementById('a_bank').value = result.applicant_data.bank_acc || '';
-                    document.getElementById('a_addr').value = result.applicant_data.address || '';
-                }
-                
-                // Load members
+                const a = result.applicant_data || {};
+                ['a_n_en','a_n_hn','a_f_en','a_f_hn'].forEach((id, i) => {
+                    const keys = ['name_en','name_hn','father_en','father_hn'];
+                    document.getElementById(id).value = a[keys[i]] || '';
+                });
+                document.getElementById('a_gen').value = a.gender || 'F';
+                document.getElementById('a_occ').value = a.occupation || '';
+                document.getElementById('a_inc').value = a.income || '';
+                document.getElementById('a_inc_no').value = a.income_cert_no || '';
+                document.getElementById('a_cas_no').value = a.cas_cert_no || '';
+                document.getElementById('a_bank').value = a.bank_acc || '';
+                document.getElementById('a_addr').value = a.address || '';
                 removeAllMembers();
-                if(result.members && result.members.length > 0) {
-                    result.members.forEach((member, idx) => {
-                        if (idx > 0) addNewMember();
-                        const memberBlock = document.querySelectorAll('#m-container .row')[idx];
-                        if (memberBlock) {
-                            memberBlock.querySelector('.m_n_en').value = member.name_en || '';
-                            memberBlock.querySelector('.m_n_hn').value = member.name_hn || '';
-                            memberBlock.querySelector('.m_f_en').value = member.father_en || '';
-                            memberBlock.querySelector('.m_f_hn').value = member.father_hn || '';
-                            memberBlock.querySelector('.m_gen').value = member.gender || 'M';
-                            memberBlock.querySelector('.m_rel').value = member.relation || '02';
-                            memberBlock.querySelector('.m_sta').value = member.marital_status || '1';
-                            memberBlock.querySelector('.m_dob').value = member.dob || '';
-                            memberBlock.querySelector('.m_aadhaar').value = member.aadhaar || '';
-                        }
-                    });
-                }
-                
+                (result.members || []).forEach((member, idx) => {
+                    if (idx > 0) addNewMember();
+                    const block = document.querySelectorAll('#m-container .row')[idx];
+                    if (block) {
+                        block.querySelector('.m_n_en').value = member.name_en || '';
+                        block.querySelector('.m_n_hn').value = member.name_hn || '';
+                        block.querySelector('.m_f_en').value = member.father_en || '';
+                        block.querySelector('.m_f_hn').value = member.father_hn || '';
+                        block.querySelector('.m_gen').value = member.gender || 'M';
+                        block.querySelector('.m_rel').value = member.relation || '02';
+                        block.querySelector('.m_sta').value = member.marital_status || '1';
+                        block.querySelector('.m_dob').value = member.dob || '';
+                        block.querySelector('.m_aadhaar').value = member.aadhaar || '';
+                    }
+                });
                 showStatus('search-status', '✅ डेटा फॉर्म में लोड हो गया!', 'success');
-                setTimeout(() => {
-                    document.getElementById('search-status').style.display = 'none';
-                }, 2000);
-            } else {
-                showStatus('search-status', result.message, 'error');
-            }
-        } catch(err) {
-            showStatus('search-status', '❌ Load error: ' + err.message, 'error');
-        }
+                setTimeout(() => { document.getElementById('search-status').style.display = 'none'; }, 2000);
+            } else { showStatus('search-status', result.message, 'error'); }
+        } catch(err) { showStatus('search-status', '❌ Load error: ' + err.message, 'error'); }
     }
     
     function clearSearch() {
@@ -735,24 +680,18 @@
         document.getElementById('search-result-output').style.display = 'none';
         lastSearchResult = null;
     }
-    
-    function showStatus(elementId, message, type) {
-        const el = document.getElementById(elementId);
-        el.style.display = 'block';
-        el.className = `status-msg status-${type}`;
-        el.textContent = message;
+    function showStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.style.display = 'block'; el.className = `status-msg status-${type}`; el.textContent = msg;
         setTimeout(() => { el.style.display = 'none'; }, 5000);
     }
-    
     function escapeHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-    
     function copyCode(id) {
-        const text = document.getElementById(id);
-        text.select();
-        navigator.clipboard.writeText(text.value);
+        const t = document.getElementById(id); t.select();
+        navigator.clipboard.writeText(t.value);
         alert("✅ कोड कॉपी हो गया!");
     }
 </script>
