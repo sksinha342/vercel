@@ -10,7 +10,7 @@ from datetime import datetime
 form_eight_bp = Blueprint('form_eight', __name__)
 
 metadata = {
-    "title": "OBC Form VIII Generator",
+    "title": "NCL ( Central ) Decleration Genretor",
     "description": "Handwriting style Hindi form filler for OBC certificates.",
     "image": "pages/form8.jpg"
 }
@@ -18,7 +18,7 @@ metadata = {
 # --- पाथ सेटिंग: जो Vercel और Local दोनों जगह काम करे ---
 # यह कोड पक्का करता है कि फाइल हमेशा 'index.py' वाली Root डायरेक्टरी में ढूंढी जाए
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_IMAGE_PATH = os.path.join(BASE_DIR, "form_viii_base.jpg")
+BASE_IMAGE_PATH = os.path.join(BASE_DIR, "static", "form_viii_base.jpg")
 
 def get_hindi_font(size=28):
     """फोंट्स के लिए भी Absolute Path"""

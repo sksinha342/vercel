@@ -7,20 +7,19 @@ from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
 
 # 1. Blueprint Setup
-form_eight_bp = Blueprint('form_eight', __name__)
+form_nine_bp = Blueprint('form_nine', __name__)
 
 metadata = {
-    "title": "OBC Form VIII Generator",
+    "title": "NCL ( Bihar ) Decleration Genretor",
     "description": "Handwriting style Hindi form filler for OBC certificates.",
-    "image": "pages/form8.jpg"
+    "image": "pages/form9.jpg"
 }
 
 # --- पाथ सेटिंग: जो Vercel और Local दोनों जगह काम करे ---
-# यह कोड पक्का करता है कि फाइल हमेशा 'index.py' वाली Root डायरेक्टरी में ढूंढी जाए
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE_IMAGE_PATH = os.path.join(BASE_DIR, "form_viii_base.jpg")
+BASE_IMAGE_PATH = os.path.join(BASE_DIR, "static", "OBC_Form_IX.jpg")
 
-def get_hindi_font(size=28):
+def get_hindi_font(size=54):
     """फोंट्स के लिए भी Absolute Path"""
     font_paths = [
         os.path.join(BASE_DIR, "fonts", "Kalam-Regular.ttf"),
@@ -55,8 +54,9 @@ def draw_clean_text(draw, img, text, x, y, font, rotate=False):
             curr_x += (bbox[2] - bbox[0]) + word_gap
             
         rotated_text = text_layer.rotate(rotation_angle, expand=1, resample=Image.BICUBIC)
-        # 925 बेसलाइन के हिसाब से पोजीशन
-        img.paste(rotated_text, (x, 925 - 25), rotated_text) 
+        
+        # --- सुधार: यहाँ 925 की जगह डायनामिक 'y' का इस्तेमाल किया है ---
+        img.paste(rotated_text, (x, y - 25), rotated_text) 
     else:
         draw.text((x, y), text_str, font=font, fill="darkblue")
 
@@ -78,11 +78,11 @@ def draw_handwriting(draw, text, x, y, font):
             current_x += 18
     return current_y + 38
 
-@form_eight_bp.route('/form_eight')
+@form_nine_bp.route('/form_nine')
 def index():
-    return render_template('form_eight.html')
+    return render_template('form_nine.html')
 
-@form_eight_bp.route('/form_eight/generate', methods=['POST'])
+@form_nine_bp.route('/form_nine/generate', methods=['POST'])
 def generate():
     data = {
         'name': request.form.get('name', ''),
@@ -101,52 +101,51 @@ def generate():
         'signature': request.form.get('signature', ''),
     }
     
-    # इमेज को सिर्फ READ करना (Vercel को इससे दिक्कत नहीं है)
     if not os.path.exists(BASE_IMAGE_PATH):
         return f"Error: {BASE_IMAGE_PATH} not found. Path check karo bhai!"
 
     img = Image.open(BASE_IMAGE_PATH).convert('RGBA')
     draw = ImageDraw.Draw(img)
-    default_font = get_hindi_font(28)
+    default_font = get_hindi_font(54)
     
     # फॉर्म भरने का काम
     fields = [
-        (data['name'], 210, 245), (data['father'], 715, 236),
-        (data['village'], 240, 285), (data['post_office'], 673, 275),
-        (data['thana'], 960, 270), (data['block'], 150, 325),
-        (data['subdivision'], 408, 328), (data['district'], 629, 325),
-        (data['state'], 850, 320), (data['caste'], 233, 410)
+        (data['name'], 455, 595), (data['father'], 1415, 558),
+        (data['village'], 497, 675), (data['post_office'], 1318, 630),
+        (data['thana'], 1770, 629), (data['block'], 370, 755),
+        (data['subdivision'], 807, 742), (data['district'], 1325, 729),
+        (data['state'], 1650, 717), (data['caste'], 497, 910)
     ]
     for text, x, y in fields:
         draw_handwriting(draw, text, x, y, default_font)
     
     if data['annual_income']:
-        draw_clean_text(draw, img, data['annual_income'], 710, 835, default_font)
+        draw_clean_text(draw, img, data['annual_income'], 1415, 1665, default_font)
     
     if data['total_income']:
         val = str(data['total_income'])
-        f_size = 26
-        if len(val) > 18: f_size = 18
-        elif len(val) > 12: f_size = 21
+        f_size = 54
+        if len(val) > 18: f_size = 40
+        elif len(val) > 12: f_size = 43
         income_font = get_hindi_font(f_size)
-        draw_clean_text(draw, img, val, 122, 915, income_font, rotate=True)
+        
+        # अब यह 1915 पोजीशन को सही से पकड़ेगा
+        draw_clean_text(draw, img, val, 252, 1880, income_font, rotate=True)
     
-    draw_handwriting(draw, data['date'], 213, 1572, default_font)
-    draw_handwriting(draw, data['village'], 213, 1532, default_font)
+    draw_handwriting(draw, data['date'], 486, 3142, default_font)
+    draw_handwriting(draw, data['village'], 486, 3048, default_font)
     sign_text = data['signature'] if data['signature'] else "______________"
-    draw_handwriting(draw, sign_text, 800, 1525, default_font)
+    draw_handwriting(draw, sign_text, 1600, 3025, default_font)
     
-    # --- मुख्य बदलाव: मेमोरी (RAM) में राइट करना ---
-    # यहाँ हम डिस्क पर कोई फाइल सेव नहीं कर रहे
+    # --- मेमोरी (RAM) में राइट करना ---
     img_io = io.BytesIO()
     final_img = img.convert('RGB')
-    final_img.save(img_io, 'JPEG', quality=40)
+    final_img.save(img_io, 'JPEG', quality=4)
     img_io.seek(0)
     
-    # सीधे मेमोरी से डेटा भेजें
     return send_file(
         img_io, 
         mimetype='image/jpeg', 
         as_attachment=True, 
-        download_name="OBC_Form_VIII_Filled.jpg"
+        download_name="OBC_Form_IX_Filled.jpg"
     )
