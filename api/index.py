@@ -66,4 +66,4 @@ def index():
 
 if __name__ == "__main__":
     print("\n🚀 Starting Flask Server...")
-    app.run(debug=True, port=5006, host='0.0.0.0')
+    app.run(port=5006, host='0.0.0.0') # if you add debug then unnasasry things will be added
