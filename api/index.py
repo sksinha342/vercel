@@ -8,8 +8,6 @@ from psycopg2 import OperationalError
 # Local .env file ko read karne ke liye package load kar rahe hain
 from dotenv import load_dotenv
 
-# for our render server alive
-import requests
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
@@ -120,23 +118,7 @@ def daily_db_cron():
             return jsonify({"status": "error", "message": f"Query failed: {str(query_err)}"}), 500
     else:
         return jsonify({"status": "failed", "message": "Could not establish database connection."}), 500
-@app.route("/api/ping-render", methods=["GET"])
-def ping_render():
-    """Yeh route Render server ko jagaye rakhne ke liye hai"""
-    render_url = "https://renver.onrender.com" # Aapka Render API URL
-    
-    try:
-        # Render ko ek simple request bhej rahe hain
-        response = requests.get(render_url, timeout=10)
-        print(f"🔔 Render Pinged! Status Code: {response.status_code}")
-        
-        return jsonify({
-            "status": "success", 
-            "message": f"Render API pinged successfully with status {response.status_code}"
-        }), 200
-    except Exception as e:
-        print(f"❌ Render Ping Failed: {str(e)}")
-        return jsonify({"status": "error", "message": f"Failed to ping Render: {str(e)}"}), 500
+
 
 if __name__ == "__main__":
     print("\n🚀 Starting Flask Server...")

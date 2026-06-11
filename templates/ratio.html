@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Advanced Image Studio - Custom Ratio</title>
-<meta property="og:url" content="https://sksinha342.vercel.app/resize">
+    <title>Advanced Image Studio - Custom Ratio & Pixels</title>
+    <meta property="og:url" content="https://sksinha342.vercel.app/resize">
     <meta property="og:image" content="https://res.cloudinary.com/dj1mpwooh/image/upload/v1777659085/hwoi3i6kxeip4rwnazcg.jpg">
     <meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
-    <meta name="description" content="Exprlore advanced python tools for rank list genrator.">
-    <meta name="keywords" content="SK Sinha 342, PDF Password Cracker, PDF Locker, QR Generator, Bihar Developer, ">
-    <meta property="og:title" content="Rank List Generator ">
+    <meta name="description" content="Explore advanced python tools for rank list generator.">
+    <meta name="keywords" content="SK Sinha 342, PDF Password Cracker, PDF Locker, QR Generator, Bihar Developer">
+    <meta property="og:title" content="Rank List Generator">
     <meta property="og:type" content="website">
     <meta property="og:description" content="Python utility tools by SK Sinha.">
     <meta property="twitter:card" content="summary_large_image">
@@ -18,14 +18,11 @@
     <meta property="twitter:image" content="./static/img/footer.jpg">
     <link rel="canonical" href="https://sksinha342.vercel.app/resize">
 
-
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="author" content="SK Sinha 342">
     <meta name="robots" content="index, follow">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     
-    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #121212; color: #e0e0e0; margin: 0; padding: 20px; }
@@ -50,16 +47,19 @@
             font-size: 12px;
             height: 30px;
             display: block;
-            margin: 30px auto;
+            margin: 10px auto;
             color: white;
             border: none;
             cursor: pointer;
+            text-align: center;
+            border-radius: 5px;
+            font-weight: bold;
         }
 
         button:hover { opacity: 0.8; transform: translateY(-1px); }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        #customRatioInputs { display: none; margin-top: 10px; background: #3d3d3d; padding: 10px; border-radius: 5px; border-left: 4px solid #27ae60; }
+        #customRatioInputs, #pixelSizeInputs { display: none; margin-top: 10px; background: #3d3d3d; padding: 10px; border-radius: 5px; border-left: 4px solid #27ae60; }
 
         .status-bar {
             margin-top: 15px;
@@ -120,8 +120,10 @@
 
 <div class="main-container">
     <h2 style="text-align: center; color: #27ae60; margin-top: 0;">⚡ Advanced Image Toolkit</h2>
-    <button class="btn-downloa" id="downloadBt" onclick="window.location.href += '/rconline'">RC Online</button>
- <button class="btn-downloa" id="downloadBt" onclick="window.location.href += '/imgcombine'">Multy Sided</button>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button class="btn-downloa" id="btnRcOnline" onclick="window.location.href += '/rconline'">RC Online</button>
+        <button class="btn-downloa" id="btnMultiSided" onclick="window.location.href += '/imgcombine'">Multi Sided</button>
+    </div>
 
     <input type="file" id="upload" accept="image/*" style="margin-bottom: 20px; width: 100%;">
 
@@ -131,20 +133,31 @@
 
     <div class="toolbar">
         <div class="control-item">
-            <label>Ratio Lock</label>
+            <label>Ratio Lock / Size Mode</label>
             <select id="ratioSelect">
                 <option value="NaN">Free (No Lock)</option>
                 <option value="1">1:1 (Square)</option>
                 <option value="1.333">4:3 (Classic)</option>
                 <option value="1.777">16:9 (HD)</option>
                 <option value="custom">-- Custom Ratio --</option>
+                <option value="pixels">-- Size by Pixel --</option>
             </select>
+            
             <div id="customRatioInputs">
                 <div style="display: flex; gap: 5px; align-items: center;">
                     <input type="number" id="ratioW" placeholder="W" style="width: 50px;">
                     <span>:</span>
                     <input type="number" id="ratioH" placeholder="H" style="width: 50px;">
                     <button class="btn-primary" onclick="setCustomRatio()" style="font-size: 12px; padding: 5px;">Apply</button>
+                </div>
+            </div>
+
+            <div id="pixelSizeInputs">
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <input type="number" id="pixelW" placeholder="Width" style="width: 60px; font-size: 12px;" value="300">
+                    <span>×</span>
+                    <input type="number" id="pixelH" placeholder="Height" style="width: 60px; font-size: 12px;" value="300">
+                    <button class="btn-primary" onclick="applyPixelSize()" style="font-size: 12px; padding: 5px;">Lock</button>
                 </div>
             </div>
         </div>
@@ -184,17 +197,20 @@
     const image = document.getElementById('image');
     const rotateInput = document.getElementById('rotateDeg');
     const customUI = document.getElementById('customRatioInputs');
+    const pixelUI = document.getElementById('pixelSizeInputs');
     const downloadBtn = document.getElementById('downloadBtn');
     const statusBar = document.getElementById('statusBar');
     const statusMessage = document.getElementById('statusMessage');
     const targetKbInput = document.getElementById('targetKb');
 
     let originalFileSizeKB = 0;
+    let useExactPixelDimensions = false;
 
     // ========== Status Bar ==========
     function showStatus(message, type = 'info') {
+        if (!statusMessage || !statusBar) return;
         statusMessage.innerHTML = message;
-        statusBar.classList.add('show');
+        statusBar.className = 'status-bar show';
         setTimeout(() => statusBar.classList.remove('show'), 3000);
     }
 
@@ -236,27 +252,24 @@
         overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
     }
 
-    // ========== Pure Client-Side Compression (Binary Search) ==========
-    // Same method as doclike.html — no server needed
+    // ========== Pure Client-Side Exact Compression Method ==========
     async function compressToTarget(sourceCanvas, targetKB) {
         const mimeType = 'image/jpeg';
 
-        // No target: use good default quality
+        // No target: High quality direct output
         if (!targetKB || targetKB <= 0) {
-            const blob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, 0.92));
-            return blob;
+            return await new Promise(res => sourceCanvas.toBlob(res, mimeType, 0.92));
         }
 
         const targetBytes = targetKB * 1024;
-
-        // Step 1: Binary search on quality (12 iterations covers full 1-100 range)
         let low = 10, high = 100;
         let bestBlob = null;
         let bestSize = 0;
 
+        // Step 1: Quality Binary Search Loop (12 iterations)
         for (let i = 0; i < 12; i++) {
-            const mid = Math.floor((low + high) / 2);
-            const blob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, mid / 100));
+            const testQuality = Math.floor((low + high) / 2);
+            const blob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, testQuality / 100));
             const size = blob.size;
 
             if (size <= targetBytes) {
@@ -264,13 +277,13 @@
                     bestBlob = blob;
                     bestSize = size;
                 }
-                low = mid + 1;
+                low = testQuality + 1;
             } else {
-                high = mid - 1;
+                high = testQuality - 1;
             }
         }
 
-        // Step 2: If quality alone isn't enough, scale down canvas dimensions
+        // Step 2: Dimension Scaling Fallback (Last resort if quality tweak isn't enough)
         if (!bestBlob || bestSize > targetBytes) {
             let scale = 0.9;
             while (scale > 0.2) {
@@ -295,7 +308,7 @@
             }
         }
 
-        // Absolute fallback
+        // Absolute fallback minimum size
         if (!bestBlob) {
             bestBlob = await new Promise(res => sourceCanvas.toBlob(res, mimeType, 0.1));
         }
@@ -303,13 +316,13 @@
         return bestBlob;
     }
 
-    // ========== File Upload ==========
+    // ========== File Upload Input Loader ==========
     document.getElementById('upload').onchange = (e) => {
         const file = e.target.files[0];
         if (file) {
             originalFileSizeKB = file.size / 1024;
             document.getElementById('filename').value = file.name.replace(/\.[^/.]+$/, '');
-            showStatus(`📸 Image loaded: ${originalFileSizeKB.toFixed(1)} KB | Format: ${file.type.split('/')[1].toUpperCase()}`, 'info');
+            showStatus(`📸 Image loaded: ${originalFileSizeKB.toFixed(1)} KB`, 'info');
 
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -330,12 +343,19 @@
         });
     }
 
-    // ========== Ratio Switch ==========
+    // ========== Mode Controls Switcher ==========
     document.getElementById('ratioSelect').onchange = function() {
+        customUI.style.display = 'none';
+        pixelUI.style.display = 'none';
+        useExactPixelDimensions = false;
+
         if (this.value === 'custom') {
             customUI.style.display = 'block';
+        } else if (this.value === 'pixels') {
+            pixelUI.style.display = 'block';
+            useExactPixelDimensions = true;
+            applyPixelSize(); // Auto-apply default values instantly
         } else {
-            customUI.style.display = 'none';
             const ratio = parseFloat(this.value);
             cropper.setAspectRatio(isNaN(ratio) ? NaN : ratio);
         }
@@ -346,12 +366,24 @@
         const h = parseFloat(document.getElementById('ratioH').value);
         if (w > 0 && h > 0) {
             cropper.setAspectRatio(w / h);
-            showStatus(`✅ Aspect ratio set to ${w}:${h}`, 'success');
+            showStatus(`✅ Ratio locked to ${w}:${h}`, 'success');
         } else {
-            alert("Please enter valid Width and Height");
+            alert("Please enter valid width and height values.");
         }
     }
 
+    function applyPixelSize() {
+        const w = parseInt(document.getElementById('pixelW').value);
+        const h = parseInt(document.getElementById('pixelH').value);
+        if (w > 0 && h > 0) {
+            cropper.setAspectRatio(w / h);
+            showStatus(`🎯 Crop box locked to ratio of ${w}x${h}px`, 'success');
+        } else {
+            alert("Please enter valid width and height pixels!");
+        }
+    }
+
+    // ========== Tools System ==========
     function adjRotate(val) {
         rotateInput.value = (parseInt(rotateInput.value) + val + 360) % 360;
         cropper.rotateTo(rotateInput.value);
@@ -361,7 +393,7 @@
         cropper.rotateTo(this.value);
     };
 
-    // ========== Download: Pure Client-Side ==========
+    // ========== Crop, Resize and Compile Core logic ==========
     downloadBtn.onclick = async () => {
         if (!cropper) { alert("Upload an image first!"); return; }
 
@@ -373,13 +405,25 @@
         downloadBtn.disabled = true;
 
         try {
-            // Get cropped canvas from cropper.js
-            const croppedCanvas = cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' });
+            let canvasOptions = { imageSmoothingQuality: 'high' };
 
-            showStatus(`🔄 Compressing... Target: ${targetKb ? targetKb + ' KB' : 'Auto'}`, 'info');
+            // Dynamic Custom Pixel Size Canvas generator
+            if (useExactPixelDimensions) {
+                const w = parseInt(document.getElementById('pixelW').value);
+                const h = parseInt(document.getElementById('pixelH').value);
+                if (w > 0 && h > 0) {
+                    canvasOptions.width = w;
+                    canvasOptions.height = h;
+                }
+            }
 
-            // Client-side compression — no server call
-            const blob = await compressToTarget(croppedCanvas, targetKb);
+            // Generate Canvas from Cropper
+            const finalCanvas = cropper.getCroppedCanvas(canvasOptions);
+
+            showStatus(`🔄 Processing size logic... Target: ${targetKb ? targetKb + ' KB' : 'Auto'}`, 'info');
+
+            // Pass canvas to core binary scale compressor
+            const blob = await compressToTarget(finalCanvas, targetKb);
             const finalSizeKB = blob.size / 1024;
 
             showConfirmDialog(originalFileSizeKB, finalSizeKB, () => {
@@ -397,7 +441,7 @@
                     if (diff <= targetKb * 0.1) {
                         showStatus(`✅ Success! Size: ${finalSizeKB.toFixed(1)} KB (Target: ${targetKb} KB)`, 'success');
                     } else {
-                        showStatus(`⚠️ Size: ${finalSizeKB.toFixed(1)} KB (Target: ${targetKb} KB)`, 'info');
+                        showStatus(`⚠️ Compressed as close as possible: ${finalSizeKB.toFixed(1)} KB`, 'info');
                     }
                 } else {
                     showStatus(`✅ Downloaded! Final size: ${finalSizeKB.toFixed(1)} KB`, 'success');

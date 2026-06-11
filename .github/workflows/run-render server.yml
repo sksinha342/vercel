@@ -1,10 +1,16 @@
-name: Keep Render Alive Direct
+name: Keep Render Alive Smart Schedule
 
 on:
   schedule:
-    # Yeh har 14 minute me automatic chalega
-    - cron: '*/14 * * * *'
-  workflow_dispatch: # Isse aap GitHub dashboard se manually bhi run kar sakte hain
+    # Schedule 1: Har ghante ki 0th, 14th, 28th, aur 42nd minute par chalega
+    # Hours (4-15): UTC ke subah 4 baje se dopehar 3 baje tak (IST: 9:30 AM से 9:29 PM)
+    - cron: '0,14,28,42 4-15 * * *'
+
+    # Schedule 2: Raat ko exact 9:30 PM se 10:00 PM ke beech ka gap maintain karne ke liye
+    # Yeh UTC ke 16:00 baje (IST: 9:30 PM) par chalta hai
+    - cron: '0,14 * * *'
+
+  workflow_dispatch: # Taaki aap manually bhi test kar sakein
 
 jobs:
   ping_render:
