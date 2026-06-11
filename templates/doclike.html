@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
-<meta property="og:url" content="https://sksinha342.vercel.app/doclike">
+    <meta property="og:url" content="https://sksinha342.vercel.app/doclike">
     <meta property="og:image" content="https://res.cloudinary.com/dj1mpwooh/image/upload/v1777659251/mzmhn1xq4o5pkirui3gc.jpg">
     <meta name="title" content="SK Sinha's Python Tool Hub - Advance PDF & Web Utilities">
-    <meta name="description" content="Exprlore advanced python tools for rank list genrator.">
-    <meta name="keywords" content="SK Sinha 342, PDF Password Cracker, PDF Locker, QR Generator, Bihar Developer, ">
-    <meta property="og:title" content="Rank List Generator ">
+    <meta name="description" content="Explore advanced python tools for rank list generator.">
+    <meta name="keywords" content="SK Sinha 342, PDF Password Cracker, PDF Locker, QR Generator, Bihar Developer">
+    <meta property="og:title" content="Rank List Generator">
     <meta property="og:type" content="website">
     <meta property="og:description" content="Python utility tools by SK Sinha.">
     <meta property="twitter:card" content="summary_large_image">
@@ -18,14 +18,10 @@
     <meta property="twitter:image" content="./static/img/footer.jpg">
     <link rel="canonical" href="https://sksinha342.vercel.app/doclike">
 
-
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="author" content="SK Sinha 342">
     <meta name="robots" content="index, follow">
-    <link href='./static/img/sksinha4.ico' rel='icon' type='image/x-icon'/>
     
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Pro Scanner - Multi-Page Document Scanner</title>
     <style>
         * {
@@ -492,7 +488,6 @@
 <div class="container">
     <h2>📄 Pro Scanner - Multi-Page Scanner</h2>
 
-    <!-- Upload Area: no wrapping label, click handled via JS only -->
     <div class="upload-area" id="uploadArea">
         <input type="file" id="fileInput" accept="image/*" multiple>
         <div class="upload-label" id="uploadBtn">📤 Click to Select Images</div>
@@ -546,8 +541,7 @@
 
         <div class="button-group">
             <button id="resetBtn" class="btn-warning">⟳ Reset Points</button>
-            <button id="applyToCurrentBtn" class="btn-primary">✓ Apply to Current</button>
-            <button id="applyToAllBtn" class="btn-primary">📌 Apply to All Pages</button>
+            <button id="applyToAllBtn" class="btn-primary">📌 Apply Settings to All Pages</button>
             <button id="downloadImgBtn" class="btn-success">💾 Save as Image</button>
             <button id="downloadPdfBtn" class="btn-danger">📑 Save as PDF</button>
         </div>
@@ -564,957 +558,980 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
     // ========== DOM Elements ==========
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
-    const previewCanvas = document.getElementById('previewCanvas');
-    const previewCtx = previewCanvas.getContext('2d');
-    const fileInput = document.getElementById('fileInput');
-    const uploadArea = document.getElementById('uploadArea');
-    const uploadBtn = document.getElementById('uploadBtn');
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const previewCanvas = document.getElementById('previewCanvas');
+const previewCtx = previewCanvas.getContext('2d');
+const fileInput = document.getElementById('fileInput');
+const uploadArea = document.getElementById('uploadArea');
+const uploadBtn = document.getElementById('uploadBtn');
 
-    // ========== State Variables ==========
-    let images = [];
-    let currentIndex = 0;
-    let currentImage = null;
-    let originalWidth = 0, originalHeight = 0;
-    let canvasWidth = 0, canvasHeight = 0;
-    let isImageLoaded = false;
-    let currentRotation = 0;
-    let originalFileSizeKB = 0;
+// ========== State Variables ==========
+let images = [];
+let currentIndex = 0;
+let currentImage = null;
+let originalWidth = 0, originalHeight = 0;
+let canvasWidth = 0, canvasHeight = 0;
+let isImageLoaded = false;
+let currentRotation = 0;
+let originalFileSizeKB = 0;
 
-    let points = [
+let points = [
+    { x: 0.1, y: 0.1 },
+    { x: 0.9, y: 0.1 },
+    { x: 0.9, y: 0.9 },
+    { x: 0.1, y: 0.9 }
+];
+
+let draggingPoint = -1;
+let previewTimeout = null;
+
+// ========== Event Listeners ==========
+uploadBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fileInput.click();
+});
+
+uploadArea.addEventListener('click', (e) => {
+    e.stopPropagation();
+});
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '#1e90ff';
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.style.borderColor = '#3a3a3a';
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    uploadArea.style.borderColor = '#3a3a3a';
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length) handleFiles(files);
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length) {
+        handleFiles(Array.from(e.target.files));
+    }
+    fileInput.value = '';
+});
+
+async function handleFiles(files) {
+    await loadMultipleImages(files);
+}
+
+function resetState() {
+    images = [];
+    currentIndex = 0;
+    currentImage = null;
+    isImageLoaded = false;
+    document.getElementById('thumbnailStrip').style.display = 'none';
+    document.getElementById('navButtons').style.display = 'none';
+    updateThumbnails();
+    updateNavButtons();
+    clearCanvas();
+}
+
+async function loadMultipleImages(files) {
+    showProgress(true);
+    for (let i = 0; i < files.length; i++) {
+        const img = await loadImageFromFile(files[i]);
+        images.push({
+            file: files[i],
+            imageElement: img,
+            originalWidth: img.width,
+            originalHeight: img.height,
+            points: [
+                { x: 0.1, y: 0.1 },
+                { x: 0.9, y: 0.1 },
+                { x: 0.9, y: 0.9 },
+                { x: 0.1, y: 0.9 }
+            ],
+            rotation: 0,
+            sizeKB: files[i].size / 1024
+        });
+        updateProgress((i + 1) / files.length * 100);
+    }
+
+    if (images.length) {
+        document.getElementById('thumbnailStrip').style.display = 'flex';
+        document.getElementById('navButtons').style.display = 'flex';
+        currentIndex = 0;
+        loadImageAtIndex(currentIndex);
+    }
+
+    updateThumbnails();
+    updateNavButtons();
+    showProgress(false);
+}
+
+function loadImageFromFile(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function loadImageAtIndex(index) {
+    if (!images.length) return;
+    const imgData = images[index];
+    currentImage = imgData.imageElement;
+    originalWidth = imgData.originalWidth;
+    originalHeight = imgData.originalHeight;
+    points = JSON.parse(JSON.stringify(imgData.points));
+    currentRotation = imgData.rotation;
+    originalFileSizeKB = imgData.sizeKB;
+    isImageLoaded = true;
+
+    updateCanvasSize();
+    drawCanvas();
+    updatePreview();
+    updateActiveThumbnail();
+    updateNavButtons();
+}
+
+function autoSaveCurrentState() {
+    if (images.length && isImageLoaded) {
+        images[currentIndex].points = JSON.parse(JSON.stringify(points));
+        images[currentIndex].rotation = currentRotation;
+        images[currentIndex].imageElement = currentImage;
+        images[currentIndex].originalWidth = originalWidth;
+        images[currentIndex].originalHeight = originalHeight;
+    }
+}
+
+// ========== Thumbnail Management ==========
+function updateThumbnails() {
+    const strip = document.getElementById('thumbnailStrip');
+    strip.innerHTML = '';
+
+    images.forEach((img, idx) => {
+        const thumb = document.createElement('div');
+        thumb.className = `thumbnail ${idx === currentIndex ? 'active' : ''}`;
+
+        const thumbImg = document.createElement('img');
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = 80;
+        tempCanvas.height = 80;
+        tempCtx.drawImage(img.imageElement, 0, 0, 80, 80);
+        thumbImg.src = tempCanvas.toDataURL();
+
+        const removeBtn = document.createElement('div');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            removeImage(idx);
+        };
+
+        thumb.appendChild(thumbImg);
+        thumb.appendChild(removeBtn);
+        thumb.onclick = () => {
+            autoSaveCurrentState();
+            currentIndex = idx;
+            loadImageAtIndex(currentIndex);
+        };
+
+        strip.appendChild(thumb);
+    });
+}
+
+function updateActiveThumbnail() {
+    const thumbs = document.querySelectorAll('.thumbnail');
+    thumbs.forEach((thumb, idx) => {
+        thumb.classList.toggle('active', idx === currentIndex);
+    });
+}
+
+function removeImage(index) {
+    images.splice(index, 1);
+    if (images.length === 0) {
+        resetState();
+    } else {
+        if (currentIndex >= images.length) currentIndex = images.length - 1;
+        if (currentIndex < 0) currentIndex = 0;
+        loadImageAtIndex(currentIndex);
+    }
+    updateThumbnails();
+    updateNavButtons();
+}
+
+function updateNavButtons() {
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex === images.length - 1 || images.length === 0;
+}
+
+// ========== Apply to All Pages ==========
+document.getElementById('applyToAllBtn').addEventListener('click', () => {
+    if (images.length) {
+        autoSaveCurrentState();
+        for (let i = 0; i < images.length; i++) {
+            images[i].points = JSON.parse(JSON.stringify(points));
+            images[i].rotation = currentRotation;
+            images[i].imageElement = currentImage;
+            images[i].originalWidth = originalWidth;
+            images[i].originalHeight = originalHeight;
+        }
+        updateThumbnails();
+        showToast(`Applied setting to all ${images.length} pages`);
+    }
+});
+
+// ========== Navigation ==========
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentIndex > 0) {
+        autoSaveCurrentState();
+        currentIndex--;
+        loadImageAtIndex(currentIndex);
+    }
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentIndex < images.length - 1) {
+        autoSaveCurrentState();
+        currentIndex++;
+        loadImageAtIndex(currentIndex);
+    }
+});
+
+// ========== Canvas Functions ==========
+function updateCanvasSize() {
+    if (!currentImage) return;
+    const wrapper = document.getElementById('canvasWrapper');
+    const maxWidth = Math.min(wrapper.clientWidth - 20, window.innerWidth - 40);
+    const maxHeight = window.innerHeight - 450;
+
+    let scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight, 1.5);
+    scale = Math.max(scale, 0.3);
+
+    canvasWidth = originalWidth * scale;
+    canvasHeight = originalHeight * scale;
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+}
+
+function drawCanvas() {
+    if (!currentImage || !isImageLoaded) return;
+
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.drawImage(currentImage, 0, 0, canvasWidth, canvasHeight);
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#1e90ff';
+    ctx.lineWidth = 3;
+    ctx.shadowBlur = 0;
+
+    for (let i = 0; i < 4; i++) {
+        const p1 = points[i];
+        const p2 = points[(i + 1) % 4];
+        const x1 = p1.x * canvasWidth;
+        const y1 = p1.y * canvasHeight;
+        const x2 = p2.x * canvasWidth;
+        const y2 = p2.y * canvasHeight;
+
+        if (i === 0) ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+    }
+    ctx.closePath();
+    ctx.stroke();
+
+    points.forEach((point, idx) => {
+        const x = point.x * canvasWidth;
+        const y = point.y * canvasHeight;
+
+        ctx.fillStyle = draggingPoint === idx ? '#ff4757' : '#ffffff';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#1e90ff';
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+    });
+    ctx.shadowBlur = 0;
+}
+
+function clearCanvas() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+}
+
+// ========== Fixed Rotation With Promise Sync ==========
+// ========== Fixed Rotation Logic with Point Transformation ==========
+function rotateImage(degrees) {
+    if (!currentImage || !isImageLoaded) return;
+
+    // 1. Canvas par real-time angle ko update karein
+    const rotatedCanvas = document.createElement('canvas');
+    
+    // Width aur Height ko flip karenge kyunki 90deg rotate ho rha hai
+    rotatedCanvas.width = originalHeight;
+    rotatedCanvas.height = originalWidth;
+
+    const rotatedCtx = rotatedCanvas.getContext('2d');
+    
+    // Center point par le ja kar ghumayein
+    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
+    const angleRad = (degrees * Math.PI) / 180;
+    rotatedCtx.rotate(angleRad);
+    rotatedCtx.drawImage(currentImage, -originalWidth / 2, -originalHeight / 2);
+
+    // 2. CRITICAL FIX: Crop points (corners) ko bhi 90 degree ghumana hoga
+    // Agar points nahi ghumenge toh crop selection galat jagah reh jayega
+    points = points.map(p => {
+        if (degrees === 90) {
+            return { x: 1 - p.y, y: p.x }; // Clockwise rotation matrix logic
+        } else if (degrees === -90 || degrees === 270) {
+            return { x: p.y, y: 1 - p.x }; // Counter-clockwise rotation logic
+        }
+        return p;
+    });
+
+    // 3. Naye rotated state ko image element me update karein
+    const rotatedImg = new Image();
+    rotatedImg.onload = () => {
+        currentImage = rotatedImg;
+        originalWidth = rotatedImg.width;
+        originalHeight = rotatedImg.height;
+
+        // State ko globally array me sync karein taaki save/preview dono ko naya data mile
+        if (images.length && images[currentIndex]) {
+            images[currentIndex].imageElement = currentImage;
+            images[currentIndex].originalWidth = originalWidth;
+            images[currentIndex].originalHeight = originalHeight;
+            images[currentIndex].points = JSON.parse(JSON.stringify(points));
+        }
+
+        // Sabhi ui elements aur live preview ko refresh karein
+        updateCanvasSize();
+        drawCanvas();
+        updatePreview();
+        updateThumbnails();
+    };
+    
+    // PNG format use kar rhe hain bina quality lose kiye sync karne ke liye
+    rotatedImg.src = rotatedCanvas.toDataURL('image/png');
+}
+    
+document.getElementById('rotateLeft90').addEventListener('click', () => {
+    if (currentImage) rotateImage(-90);
+});
+
+document.getElementById('rotateRight90').addEventListener('click', () => {
+    if (currentImage) rotateImage(90);
+});
+
+// ========== Perspective Transform Functions ==========
+function getPerspectiveTransform(src, dst) {
+    const A = [];
+    const B = [];
+
+    for (let i = 0; i < 4; i++) {
+        A.push([src[i].x, src[i].y, 1, 0, 0, 0, -dst[i].x * src[i].x, -dst[i].x * src[i].y]);
+        A.push([0, 0, 0, src[i].x, src[i].y, 1, -dst[i].y * src[i].x, -dst[i].y * src[i].y]);
+        B.push(dst[i].x);
+        B.push(dst[i].y);
+    }
+
+    function gaussianElimination(matrix, rhs) {
+        const n = matrix.length;
+        const augmented = matrix.map((row, i) => [...row, rhs[i]]);
+
+        for (let i = 0; i < n; i++) {
+            let maxRow = i;
+            for (let j = i + 1; j < n; j++) {
+                if (Math.abs(augmented[j][i]) > Math.abs(augmented[maxRow][i])) maxRow = j;
+            }
+            [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
+
+            const pivot = augmented[i][i];
+            if (Math.abs(pivot) < 1e-8) continue;
+
+            for (let k = i; k <= n; k++) {
+                augmented[i][k] /= pivot;
+            }
+
+            for (let j = 0; j < n; j++) {
+                if (j !== i && Math.abs(augmented[j][i]) > 1e-8) {
+                    const factor = augmented[j][i];
+                    for (let k = i; k <= n; k++) {
+                        augmented[j][k] -= factor * augmented[i][k];
+                    }
+                }
+            }
+        }
+        return augmented.map(row => row[n]);
+    }
+
+    const H = gaussianElimination(A, B);
+    H.push(1);
+    return H;
+}
+
+function applyMatrix(H, x, y) {
+    const denominator = H[6] * x + H[7] * y + 1;
+    const u = (H[0] * x + H[1] * y + H[2]) / denominator;
+    const v = (H[3] * x + H[4] * y + H[5]) / denominator;
+    return { x: u, y: v };
+}
+
+function bilinearInterpolate(imageData, x, y) {
+    const w = imageData.width;
+    const h = imageData.height;
+    const x0 = Math.floor(x);
+    const y0 = Math.floor(y);
+    const x1 = Math.min(x0 + 1, w - 1);
+    const y1 = Math.min(y0 + 1, h - 1);
+
+    const fx = x - x0;
+    const fy = y - y0;
+
+    function getPixel(px, py) {
+        const idx = (py * w + px) * 4;
+        return {
+            r: imageData.data[idx],
+            g: imageData.data[idx + 1],
+            b: imageData.data[idx + 2],
+            a: imageData.data[idx + 3]
+        };
+    }
+
+    const p00 = getPixel(x0, y0);
+    const p10 = getPixel(x1, y0);
+    const p01 = getPixel(x0, y1);
+    const p11 = getPixel(x1, y1);
+
+    const r = Math.round(p00.r * (1 - fx) * (1 - fy) + p10.r * fx * (1 - fy) + p01.r * (1 - fx) * fy + p11.r * fx * fy);
+    const g = Math.round(p00.g * (1 - fx) * (1 - fy) + p10.g * fx * (1 - fy) + p01.g * (1 - fx) * fy + p11.g * fx * fy);
+    const b = Math.round(p00.b * (1 - fx) * (1 - fy) + p10.b * fx * (1 - fy) + p01.b * (1 - fx) * fy + p11.b * fx * fy);
+
+    return { r, g, b };
+}
+
+function perspectiveTransform(points, outWidth, outHeight, imgElement) {
+    const useWidth = imgElement.width;
+    const useHeight = imgElement.height;
+
+    const srcCorners = [
+        { x: 0, y: 0 },
+        { x: outWidth, y: 0 },
+        { x: outWidth, y: outHeight },
+        { x: 0, y: outHeight }
+    ];
+
+    const dstCorners = points.map(p => ({
+        x: p.x * useWidth,
+        y: p.y * useHeight
+    }));
+
+    const H = getPerspectiveTransform(srcCorners, dstCorners);
+
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = useWidth;
+    tempCanvas.height = useHeight;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.drawImage(imgElement, 0, 0);
+    const imgData = tempCtx.getImageData(0, 0, useWidth, useHeight);
+
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = outWidth;
+    outCanvas.height = outHeight;
+    const outCtx = outCanvas.getContext('2d');
+    const outData = outCtx.createImageData(outWidth, outHeight);
+
+    for (let y = 0; y < outHeight; y++) {
+        for (let x = 0; x < outWidth; x++) {
+            const srcPos = applyMatrix(H, x, y);
+            if (srcPos.x >= 0 && srcPos.x < tempCanvas.width - 1 && srcPos.y >= 0 && srcPos.y < tempCanvas.height - 1) {
+                const color = bilinearInterpolate(imgData, srcPos.x, srcPos.y);
+                const idx = (y * outWidth + x) * 4;
+                outData.data[idx] = color.r;
+                outData.data[idx + 1] = color.g;
+                outData.data[idx + 2] = color.b;
+                outData.data[idx + 3] = 255;
+            } else {
+                const idx = (y * outWidth + x) * 4;
+                outData.data[idx] = 255;
+                outData.data[idx + 1] = 255;
+                outData.data[idx + 2] = 255;
+                outData.data[idx + 3] = 255;
+            }
+        }
+    }
+
+    outCtx.putImageData(outData, 0, 0);
+    return outCanvas;
+}
+
+function updatePreview() {
+    if (!currentImage || !isImageLoaded) return;
+
+    if (previewTimeout) clearTimeout(previewTimeout);
+    previewTimeout = setTimeout(() => {
+        try {
+            const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
+            const width = Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2));
+            const height = Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2));
+
+            const previewSize = 300;
+            let outW, outH;
+            if (width > height) {
+                outW = previewSize;
+                outH = Math.round(previewSize * height / width);
+            } else {
+                outH = previewSize;
+                outW = Math.round(previewSize * width / height);
+            }
+
+            // Actual rotated image reference ke sath transformation pass hota hai
+            const corrected = perspectiveTransform(points, Math.max(outW, 1), Math.max(outH, 1), currentImage);
+            previewCanvas.width = previewSize;
+            previewCanvas.height = previewSize;
+            previewCtx.fillStyle = '#0a0a0a';
+            previewCtx.fillRect(0, 0, previewSize, previewSize);
+            const offsetX = (previewSize - outW) / 2;
+            const offsetY = (previewSize - outH) / 2;
+            previewCtx.drawImage(corrected, offsetX, offsetY, outW, outH);
+        } catch(e) {
+            console.error('Preview error:', e);
+        }
+    }, 50);
+}
+
+function resetPoints() {
+    points = [
         { x: 0.1, y: 0.1 },
         { x: 0.9, y: 0.1 },
         { x: 0.9, y: 0.9 },
         { x: 0.1, y: 0.9 }
     ];
-
-    let draggingPoint = -1;
-    let previewTimeout = null;
-
-    // ========== Fixed Upload: Single trigger only via JS, no <label for=> ==========
-    // Only the uploadBtn div triggers file open — prevents double-click from label+area
-    uploadBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        fileInput.click();
-    });
-
-    // Prevent clicks on the upload area background from triggering again
-    uploadArea.addEventListener('click', (e) => {
-        // Do nothing — only uploadBtn triggers the file dialog
-        e.stopPropagation();
-    });
-
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.style.borderColor = '#1e90ff';
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.style.borderColor = '#3a3a3a';
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        uploadArea.style.borderColor = '#3a3a3a';
-        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
-        if (files.length) handleFiles(files);
-    });
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files && e.target.files.length) {
-            handleFiles(Array.from(e.target.files));
-        }
-        fileInput.value = '';
-    });
-
-    async function handleFiles(files) {
-        await loadMultipleImages(files);
-    }
-
-    function resetState() {
-        images = [];
-        currentIndex = 0;
-        currentImage = null;
-        isImageLoaded = false;
-        document.getElementById('thumbnailStrip').style.display = 'none';
-        document.getElementById('navButtons').style.display = 'none';
-        updateThumbnails();
-        updateNavButtons();
-        clearCanvas();
-    }
-
-    async function loadMultipleImages(files) {
-        showProgress(true);
-        for (let i = 0; i < files.length; i++) {
-            const img = await loadImageFromFile(files[i]);
-            images.push({
-                file: files[i],
-                imageElement: img,
-                originalWidth: img.width,
-                originalHeight: img.height,
-                points: [
-                    { x: 0.1, y: 0.1 },
-                    { x: 0.9, y: 0.1 },
-                    { x: 0.9, y: 0.9 },
-                    { x: 0.1, y: 0.9 }
-                ],
-                rotation: 0,
-                sizeKB: files[i].size / 1024
-            });
-            updateProgress((i + 1) / files.length * 100);
-        }
-
-        if (images.length) {
-            document.getElementById('thumbnailStrip').style.display = 'flex';
-            document.getElementById('navButtons').style.display = 'flex';
-            currentIndex = 0;
-            loadImageAtIndex(currentIndex);
-        }
-
-        updateThumbnails();
-        updateNavButtons();
-        showProgress(false);
-    }
-
-    function loadImageFromFile(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function loadImageAtIndex(index) {
-        if (!images.length) return;
-        const imgData = images[index];
-        currentImage = imgData.imageElement;
-        originalWidth = imgData.originalWidth;
-        originalHeight = imgData.originalHeight;
-        points = JSON.parse(JSON.stringify(imgData.points));
-        currentRotation = imgData.rotation;
-        originalFileSizeKB = imgData.sizeKB;
-        isImageLoaded = true;
-
-        updateCanvasSize();
-        drawCanvas();
-        updatePreview();
-        updateActiveThumbnail();
-        updateNavButtons();
-    }
-
-    // ========== Thumbnail Management ==========
-    function updateThumbnails() {
-        const strip = document.getElementById('thumbnailStrip');
-        strip.innerHTML = '';
-
-        images.forEach((img, idx) => {
-            const thumb = document.createElement('div');
-            thumb.className = `thumbnail ${idx === currentIndex ? 'active' : ''}`;
-
-            const thumbImg = document.createElement('img');
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCanvas.width = 80;
-            tempCanvas.height = 80;
-            tempCtx.drawImage(img.imageElement, 0, 0, 80, 80);
-            thumbImg.src = tempCanvas.toDataURL();
-
-            const removeBtn = document.createElement('div');
-            removeBtn.className = 'remove-btn';
-            removeBtn.innerHTML = '×';
-            removeBtn.onclick = (e) => {
-                e.stopPropagation();
-                removeImage(idx);
-            };
-
-            thumb.appendChild(thumbImg);
-            thumb.appendChild(removeBtn);
-            thumb.onclick = () => {
-                currentIndex = idx;
-                loadImageAtIndex(currentIndex);
-            };
-
-            strip.appendChild(thumb);
-        });
-    }
-
-    function updateActiveThumbnail() {
-        const thumbs = document.querySelectorAll('.thumbnail');
-        thumbs.forEach((thumb, idx) => {
-            thumb.classList.toggle('active', idx === currentIndex);
-        });
-    }
-
-    function removeImage(index) {
-        images.splice(index, 1);
-        if (images.length === 0) {
-            resetState();
-        } else {
-            if (currentIndex >= images.length) currentIndex = images.length - 1;
-            if (currentIndex < 0) currentIndex = 0;
-            loadImageAtIndex(currentIndex);
-        }
-        updateThumbnails();
-        updateNavButtons();
-    }
-
-    function updateNavButtons() {
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        prevBtn.disabled = currentIndex === 0;
-        nextBtn.disabled = currentIndex === images.length - 1 || images.length === 0;
-    }
-
-    // ========== Apply Functions ==========
-    document.getElementById('applyToCurrentBtn').addEventListener('click', () => {
-        if (currentImage) {
-            images[currentIndex].points = JSON.parse(JSON.stringify(points));
-            images[currentIndex].rotation = currentRotation;
-            updatePreview();
-            showToast('Applied to current page');
-        }
-    });
-
-    document.getElementById('applyToAllBtn').addEventListener('click', () => {
-        if (images.length) {
-            for (let img of images) {
-                img.points = JSON.parse(JSON.stringify(points));
-                img.rotation = currentRotation;
-            }
-            updatePreview();
-            showToast(`Applied to all ${images.length} pages`);
-        }
-    });
-
-    // ========== Navigation ==========
-    document.getElementById('prevBtn').addEventListener('click', () => {
-        if (currentIndex > 0) {
-            currentIndex--;
-            loadImageAtIndex(currentIndex);
-        }
-    });
-
-    document.getElementById('nextBtn').addEventListener('click', () => {
-        if (currentIndex < images.length - 1) {
-            currentIndex++;
-            loadImageAtIndex(currentIndex);
-        }
-    });
-
-    // ========== Canvas Functions ==========
-    function updateCanvasSize() {
-        if (!currentImage) return;
-        const wrapper = document.getElementById('canvasWrapper');
-        const maxWidth = Math.min(wrapper.clientWidth - 20, window.innerWidth - 40);
-        const maxHeight = window.innerHeight - 450;
-
-        let scale = Math.min(maxWidth / originalWidth, maxHeight / originalHeight, 1.5);
-        scale = Math.max(scale, 0.3);
-
-        canvasWidth = originalWidth * scale;
-        canvasHeight = originalHeight * scale;
-
-        canvas.width = canvasWidth;
-        canvas.height = canvasHeight;
-    }
-
-    function drawCanvas() {
-        if (!currentImage || !isImageLoaded) return;
-
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-        ctx.drawImage(currentImage, 0, 0, canvasWidth, canvasHeight);
-
-        ctx.beginPath();
-        ctx.strokeStyle = '#1e90ff';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 0;
-
-        for (let i = 0; i < 4; i++) {
-            const p1 = points[i];
-            const p2 = points[(i + 1) % 4];
-            const x1 = p1.x * canvasWidth;
-            const y1 = p1.y * canvasHeight;
-            const x2 = p2.x * canvasWidth;
-            const y2 = p2.y * canvasHeight;
-
-            if (i === 0) ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        points.forEach((point, idx) => {
-            const x = point.x * canvasWidth;
-            const y = point.y * canvasHeight;
-
-            ctx.fillStyle = draggingPoint === idx ? '#ff4757' : '#ffffff';
-            ctx.shadowBlur = 8;
-            ctx.shadowColor = 'rgba(0,0,0,0.5)';
-            ctx.beginPath();
-            ctx.arc(x, y, 12, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.fillStyle = '#1e90ff';
-            ctx.beginPath();
-            ctx.arc(x, y, 6, 0, 2 * Math.PI);
-            ctx.fill();
-        });
-        ctx.shadowBlur = 0;
-    }
-
-    function clearCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-    }
-
-    // ========== Rotation ==========
-    function rotateImage(degrees) {
-        if (!currentImage || !isImageLoaded) return;
-
-        currentRotation = (currentRotation + degrees) % 360;
-        if (currentRotation < 0) currentRotation += 360;
-
-        const rotatedCanvas = document.createElement('canvas');
-        const angleRad = (currentRotation * Math.PI) / 180;
-        const sin = Math.abs(Math.sin(angleRad));
-        const cos = Math.abs(Math.cos(angleRad));
-
-        const newWidth = Math.floor(originalWidth * cos + originalHeight * sin);
-        const newHeight = Math.floor(originalWidth * sin + originalHeight * cos);
-
-        rotatedCanvas.width = newWidth;
-        rotatedCanvas.height = newHeight;
-
-        const rotatedCtx = rotatedCanvas.getContext('2d');
-        rotatedCtx.translate(newWidth / 2, newHeight / 2);
-        rotatedCtx.rotate(angleRad);
-        rotatedCtx.drawImage(currentImage, -originalWidth / 2, -originalHeight / 2);
-
-        const rotatedImg = new Image();
-        rotatedImg.onload = () => {
-            currentImage = rotatedImg;
-            originalWidth = rotatedImg.width;
-            originalHeight = rotatedImg.height;
-
-            resetPoints();
-            updateCanvasSize();
-            drawCanvas();
-            updatePreview();
-        };
-        rotatedImg.src = rotatedCanvas.toDataURL();
-    }
-
-    document.getElementById('rotateLeft90').addEventListener('click', () => {
-        if (currentImage) rotateImage(-90);
-    });
-
-    document.getElementById('rotateRight90').addEventListener('click', () => {
-        if (currentImage) rotateImage(90);
-    });
-
-    // ========== Perspective Transform Functions ==========
-    function getPerspectiveTransform(src, dst) {
-        const A = [];
-        const B = [];
-
-        for (let i = 0; i < 4; i++) {
-            A.push([src[i].x, src[i].y, 1, 0, 0, 0, -dst[i].x * src[i].x, -dst[i].x * src[i].y]);
-            A.push([0, 0, 0, src[i].x, src[i].y, 1, -dst[i].y * src[i].x, -dst[i].y * src[i].y]);
-            B.push(dst[i].x);
-            B.push(dst[i].y);
-        }
-
-        function gaussianElimination(matrix, rhs) {
-            const n = matrix.length;
-            const augmented = matrix.map((row, i) => [...row, rhs[i]]);
-
-            for (let i = 0; i < n; i++) {
-                let maxRow = i;
-                for (let j = i + 1; j < n; j++) {
-                    if (Math.abs(augmented[j][i]) > Math.abs(augmented[maxRow][i])) maxRow = j;
-                }
-                [augmented[i], augmented[maxRow]] = [augmented[maxRow], augmented[i]];
-
-                const pivot = augmented[i][i];
-                if (Math.abs(pivot) < 1e-8) continue;
-
-                for (let k = i; k <= n; k++) {
-                    augmented[i][k] /= pivot;
-                }
-
-                for (let j = 0; j < n; j++) {
-                    if (j !== i && Math.abs(augmented[j][i]) > 1e-8) {
-                        const factor = augmented[j][i];
-                        for (let k = i; k <= n; k++) {
-                            augmented[j][k] -= factor * augmented[i][k];
-                        }
-                    }
-                }
-            }
-            return augmented.map(row => row[n]);
-        }
-
-        const H = gaussianElimination(A, B);
-        H.push(1);
-        return H;
-    }
-
-    function applyMatrix(H, x, y) {
-        const denominator = H[6] * x + H[7] * y + 1;
-        const u = (H[0] * x + H[1] * y + H[2]) / denominator;
-        const v = (H[3] * x + H[4] * y + H[5]) / denominator;
-        return { x: u, y: v };
-    }
-
-    function bilinearInterpolate(imageData, x, y) {
-        const w = imageData.width;
-        const h = imageData.height;
-        const x0 = Math.floor(x);
-        const y0 = Math.floor(y);
-        const x1 = Math.min(x0 + 1, w - 1);
-        const y1 = Math.min(y0 + 1, h - 1);
-
-        const fx = x - x0;
-        const fy = y - y0;
-
-        function getPixel(px, py) {
-            const idx = (py * w + px) * 4;
-            return {
-                r: imageData.data[idx],
-                g: imageData.data[idx + 1],
-                b: imageData.data[idx + 2],
-                a: imageData.data[idx + 3]
-            };
-        }
-
-        const p00 = getPixel(x0, y0);
-        const p10 = getPixel(x1, y0);
-        const p01 = getPixel(x0, y1);
-        const p11 = getPixel(x1, y1);
-
-        const r = Math.round(p00.r * (1 - fx) * (1 - fy) + p10.r * fx * (1 - fy) + p01.r * (1 - fx) * fy + p11.r * fx * fy);
-        const g = Math.round(p00.g * (1 - fx) * (1 - fy) + p10.g * fx * (1 - fy) + p01.g * (1 - fx) * fy + p11.g * fx * fy);
-        const b = Math.round(p00.b * (1 - fx) * (1 - fy) + p10.b * fx * (1 - fy) + p01.b * (1 - fx) * fy + p11.b * fx * fy);
-
-        return { r, g, b };
-    }
-
-    function perspectiveTransform(points, outWidth, outHeight, imgElement) {
-        const useImg = imgElement || currentImage;
-        const useWidth = useImg.width;
-        const useHeight = useImg.height;
-
-        const srcCorners = [
-            { x: 0, y: 0 },
-            { x: outWidth, y: 0 },
-            { x: outWidth, y: outHeight },
-            { x: 0, y: outHeight }
-        ];
-
-        const dstCorners = points.map(p => ({
-            x: p.x * useWidth,
-            y: p.y * useHeight
-        }));
-
-        const H = getPerspectiveTransform(srcCorners, dstCorners);
-
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = useWidth;
-        tempCanvas.height = useHeight;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx.drawImage(useImg, 0, 0);
-        const imgData = tempCtx.getImageData(0, 0, useWidth, useHeight);
-
-        const outCanvas = document.createElement('canvas');
-        outCanvas.width = outWidth;
-        outCanvas.height = outHeight;
-        const outCtx = outCanvas.getContext('2d');
-        const outData = outCtx.createImageData(outWidth, outHeight);
-
-        for (let y = 0; y < outHeight; y++) {
-            for (let x = 0; x < outWidth; x++) {
-                const srcPos = applyMatrix(H, x, y);
-                if (srcPos.x >= 0 && srcPos.x < tempCanvas.width - 1 && srcPos.y >= 0 && srcPos.y < tempCanvas.height - 1) {
-                    const color = bilinearInterpolate(imgData, srcPos.x, srcPos.y);
-                    const idx = (y * outWidth + x) * 4;
-                    outData.data[idx] = color.r;
-                    outData.data[idx + 1] = color.g;
-                    outData.data[idx + 2] = color.b;
-                    outData.data[idx + 3] = 255;
-                } else {
-                    const idx = (y * outWidth + x) * 4;
-                    outData.data[idx] = 255;
-                    outData.data[idx + 1] = 255;
-                    outData.data[idx + 2] = 255;
-                    outData.data[idx + 3] = 255;
-                }
-            }
-        }
-
-        outCtx.putImageData(outData, 0, 0);
-        return outCanvas;
-    }
-
-    function updatePreview() {
-        if (!currentImage || !isImageLoaded) return;
-
-        if (previewTimeout) clearTimeout(previewTimeout);
-        previewTimeout = setTimeout(() => {
-            try {
-                const dstCorners = points.map(p => ({ x: p.x * originalWidth, y: p.y * originalHeight }));
-                const width = Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2));
-                const height = Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2));
-
-                const previewSize = 250;
-                let outW, outH;
-                if (width > height) {
-                    outW = previewSize;
-                    outH = Math.round(previewSize * height / width);
-                } else {
-                    outH = previewSize;
-                    outW = Math.round(previewSize * width / height);
-                }
-
-                const corrected = perspectiveTransform(points, outW, outH, currentImage);
-                previewCanvas.width = previewSize;
-                previewCanvas.height = previewSize;
-                previewCtx.fillStyle = '#1a1a1a';
-                previewCtx.fillRect(0, 0, previewSize, previewSize);
-                const offsetX = (previewSize - outW) / 2;
-                const offsetY = (previewSize - outH) / 2;
-                previewCtx.drawImage(corrected, offsetX, offsetY, outW, outH);
-            } catch(e) {
-                console.error('Preview error:', e);
-            }
-        }, 150);
-    }
-
-    function resetPoints() {
-        points = [
-            { x: 0.1, y: 0.1 },
-            { x: 0.9, y: 0.1 },
-            { x: 0.9, y: 0.9 },
-            { x: 0.1, y: 0.9 }
-        ];
-        drawCanvas();
-        updatePreview();
-    }
-
-    document.getElementById('resetBtn').addEventListener('click', resetPoints);
-
-    // ========== Compression: EXACT target size per image, NO auto-compression ==========
-    // If targetKB is set, compress each image to exactly that target independently.
-    // If no target, use quality slider as-is.
-    async function getCorrectedBlobExact(format, quality, targetKB, imgElement, imgPoints) {
-        return new Promise(async (resolve) => {
-            const useImg = imgElement;
-            const usePoints = imgPoints;
-            const useWidth = useImg.width;
-            const useHeight = useImg.height;
-
-            const dstCorners = usePoints.map(p => ({ x: p.x * useWidth, y: p.y * useHeight }));
-            const width = Math.round(Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2)));
-            const height = Math.round(Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2)));
-
-            const correctedCanvas = perspectiveTransform(usePoints, Math.max(width, 1), Math.max(height, 1), useImg);
-
-            let mimeType = 'image/jpeg';
-            if (format === 'png') mimeType = 'image/png';
-            if (format === 'webp') mimeType = 'image/webp';
-
-            // No target KB: just use quality as-is, no compression loop
-            if (!targetKB || targetKB <= 0) {
-                const blob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, quality / 100));
-                resolve(blob);
-                return;
-            }
-
-            // Target KB set: binary search quality to hit exactly this image's target
-            const targetBytes = targetKB * 1024;
-            let low = 10, high = 100;
-            let bestBlob = null;
-            let bestSize = 0;
-
-            for (let i = 0; i < 12; i++) {
-                const testQuality = Math.floor((low + high) / 2);
-                const blob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, testQuality / 100));
-                const size = blob.size;
-
-                if (size <= targetBytes) {
-                    if (size > bestSize) {
-                        bestBlob = blob;
-                        bestSize = size;
-                    }
-                    low = testQuality + 1;
-                } else {
-                    high = testQuality - 1;
-                }
-            }
-
-            // If still over target, scale down image dimensions (last resort)
-            if (!bestBlob || bestSize > targetBytes) {
-                let scale = 0.9;
-                let tempCanvas = correctedCanvas;
-                while (scale > 0.2) {
-                    const newW = Math.max(100, Math.floor(correctedCanvas.width * scale));
-                    const newH = Math.max(100, Math.floor(correctedCanvas.height * scale));
-                    const scaledCanvas = document.createElement('canvas');
-                    scaledCanvas.width = newW;
-                    scaledCanvas.height = newH;
-                    scaledCanvas.getContext('2d').drawImage(correctedCanvas, 0, 0, newW, newH);
-
-                    for (let q of [80, 70, 60, 50, 40, 30]) {
-                        const blob = await new Promise(res => scaledCanvas.toBlob(res, mimeType, q / 100));
-                        if (blob.size <= targetBytes) {
-                            bestBlob = blob;
-                            bestSize = blob.size;
-                            break;
-                        }
-                    }
-                    if (bestBlob && bestSize <= targetBytes) break;
-                    scale -= 0.1;
-                }
-            }
-
-            // Absolute fallback: return whatever we have at min quality
-            if (!bestBlob) {
-                bestBlob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, 0.1));
-            }
-
-            resolve(bestBlob);
-        });
-    }
-
-    function showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, downloadCallback) {
-        const existingOverlay = document.querySelector('.confirm-overlay');
-        if (existingOverlay) existingOverlay.remove();
-
-        const overlay = document.createElement('div');
-        overlay.className = 'confirm-overlay';
-
-        const saved = totalOriginal - totalNew;
-        const isCompressed = saved > 0;
-        const savedPercent = ((saved / totalOriginal) * 100).toFixed(1);
-
-        let breakdownHTML = '<div class="page-breakdown"><h4>📄 Page-wise Breakdown:</h4>';
-        for (let i = 0; i < originalSizes.length; i++) {
-            const pageSaved = originalSizes[i] - newSizes[i];
-            breakdownHTML += `
-                <div class="page-item">
-                    <span class="page-num">Page ${i + 1}:</span>
-                    <span>${originalSizes[i].toFixed(1)} KB → </span>
-                    <span class="page-size">${newSizes[i].toFixed(1)} KB</span>
-                    <span style="color: ${pageSaved > 0 ? '#2ed573' : '#ff4757'}">
-                        (${pageSaved > 0 ? '↓' : '↑'} ${Math.abs(pageSaved).toFixed(1)} KB)
-                    </span>
-                </div>
-            `;
-        }
-        breakdownHTML += `<div class="total-info" style="padding-top:8px;margin-top:8px;border-top:1px solid #444;">
-            <strong>Total Original:</strong> ${totalOriginal.toFixed(1)} KB<br>
-            <strong>Total New:</strong> ${totalNew.toFixed(1)} KB<br>
-            <strong>Overall ${isCompressed ? 'Saved' : 'Increased'}:</strong> ${Math.abs(saved).toFixed(1)} KB (${Math.abs(savedPercent)}%)
-        </div></div>`;
-
-        overlay.innerHTML = `
-            <div class="confirm-dialog">
-                <h3>📊 Multi-Page Download Confirmation</h3>
-                <div class="size-info">
-                    <div style="margin-bottom: 8px;">📁 Original Total Size:</div>
-                    <div class="original-size">${totalOriginal.toFixed(1)} KB</div>
-                    <div style="margin: 12px 0 8px 0;">✨ New Total Size:</div>
-                    <div class="new-size">${totalNew.toFixed(1)} KB</div>
-                    ${isCompressed ?
-                        `<div class="saved">✅ Saved: ${saved.toFixed(1)} KB (${savedPercent}% smaller)</div>` :
-                        `<div class="increased">⚠️ Increased: ${Math.abs(saved).toFixed(1)} KB (${Math.abs(savedPercent)}% larger)</div>`
-                    }
-                </div>
-                ${breakdownHTML}
-                <div class="confirm-buttons">
-                    <button class="btn-confirm" id="confirmDownload">✓ Download</button>
-                    <button class="btn-cancel" id="cancelDownload">✗ Cancel</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-
-        document.getElementById('confirmDownload').onclick = () => {
-            overlay.remove();
-            downloadCallback();
-        };
-
-        document.getElementById('cancelDownload').onclick = () => {
-            overlay.remove();
-        };
-
-        overlay.onclick = (e) => {
-            if (e.target === overlay) overlay.remove();
-        };
-    }
-
-    async function downloadAsImage() {
-        if (!currentImage) { alert('Please load an image first'); return; }
-
-        const btn = document.getElementById('downloadImgBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Processing...';
-        btn.disabled = true;
-
-        try {
-            const format = document.getElementById('outputFormat').value;
-            const quality = parseInt(document.getElementById('quality').value) || 90;
-            const targetKB = parseInt(document.getElementById('targetKB').value) || null;
-
-            const originalSizes = images.map(img => img.sizeKB);
-            const blobs = [];
-
-            showProgress(true);
-            for (let i = 0; i < images.length; i++) {
-                const img = images[i];
-                // Each image gets its OWN target independently
-                const blob = await getCorrectedBlobExact(format, quality, targetKB, img.imageElement, img.points);
-                blobs.push(blob);
-                updateProgress((i + 1) / images.length * 100);
-            }
-            showProgress(false);
-
-            const newSizes = blobs.map(b => b.size / 1024);
-            const totalOriginal = originalSizes.reduce((a, b) => a + b, 0);
-            const totalNew = newSizes.reduce((a, b) => a + b, 0);
-
-            showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, () => {
-                blobs.forEach((blob, i) => {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `scanned_page_${i + 1}.${format === 'jpeg' ? 'jpg' : format}`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    setTimeout(() => URL.revokeObjectURL(url), 500);
-                });
-                showToast(`Downloaded ${images.length} image(s)`);
-            });
-        } catch(e) {
-            alert('Error: ' + e.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-
-    async function downloadAsPDF() {
-        if (!currentImage) { alert('Please load an image first'); return; }
-
-        const btn = document.getElementById('downloadPdfBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<span class="spinner"></span> Generating PDF...';
-        btn.disabled = true;
-        showProgress(true);
-
-        try {
-            const quality = parseInt(document.getElementById('quality').value) || 90;
-            const targetKB = parseInt(document.getElementById('targetKB').value) || null;
-
-            const originalSizes = images.map(img => img.sizeKB);
-            const blobs = [];
-
-            updateProgress(0);
-            for (let i = 0; i < images.length; i++) {
-                const img = images[i];
-                // Each image compressed to its OWN targetKB independently
-                const blob = await getCorrectedBlobExact('jpeg', quality, targetKB, img.imageElement, img.points);
-                blobs.push(blob);
-                updateProgress((i + 1) / images.length * 100);
-            }
-
-            const newSizes = blobs.map(b => b.size / 1024);
-            const totalOriginal = originalSizes.reduce((a, b) => a + b, 0);
-            const totalNew = newSizes.reduce((a, b) => a + b, 0);
-
-            showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, () => {
-                generatePDFFromBlobs(blobs);
-            });
-        } catch(e) {
-            alert('PDF Error: ' + e.message);
-        } finally {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            showProgress(false);
-        }
-    }
-
-    function generatePDFFromBlobs(blobs) {
-        const { jsPDF } = window.jspdf;
-
-        if (blobs.length === 0) {
-            alert('No images to generate PDF');
+    autoSaveCurrentState();
+    drawCanvas();
+    updatePreview();
+}
+
+document.getElementById('resetBtn').addEventListener('click', resetPoints);
+
+async function getCorrectedBlobExact(format, quality, targetKB, imgElement, imgPoints) {
+    return new Promise(async (resolve) => {
+        const useWidth = imgElement.width;
+        const useHeight = imgElement.height;
+
+        const dstCorners = imgPoints.map(p => ({ x: p.x * useWidth, y: p.y * useHeight }));
+        const width = Math.round(Math.sqrt(Math.pow(dstCorners[1].x - dstCorners[0].x, 2) + Math.pow(dstCorners[1].y - dstCorners[0].y, 2)));
+        const height = Math.round(Math.sqrt(Math.pow(dstCorners[3].x - dstCorners[0].x, 2) + Math.pow(dstCorners[3].y - dstCorners[0].y, 2)));
+
+        const correctedCanvas = perspectiveTransform(imgPoints, Math.max(width, 1), Math.max(height, 1), imgElement);
+
+        let mimeType = 'image/jpeg';
+        if (format === 'png') mimeType = 'image/png';
+        if (format === 'webp') mimeType = 'image/webp';
+
+        if (!targetKB || targetKB <= 0) {
+            const blob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, quality / 100));
+            resolve(blob);
             return;
         }
 
-        let pdf = null;
-        let imagesLoaded = 0;
+        const targetBytes = targetKB * 1024;
+        let low = 10, high = 100;
+        let bestBlob = null;
+        let bestSize = 0;
 
-        blobs.forEach((blob, idx) => {
-            const imgUrl = URL.createObjectURL(blob);
-            const img = new Image();
+        for (let i = 0; i < 12; i++) {
+            const testQuality = Math.floor((low + high) / 2);
+            const blob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, testQuality / 100));
+            const size = blob.size;
 
-            img.onload = () => {
-                if (pdf === null) {
-                    const orientation = img.width > img.height ? 'landscape' : 'portrait';
-                    pdf = new jsPDF({ orientation, unit: 'mm' });
+            if (size <= targetBytes) {
+                if (size > bestSize) {
+                    bestBlob = blob;
+                    bestSize = size;
                 }
-
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-                const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
-                const drawWidth = img.width * ratio;
-                const drawHeight = img.height * ratio;
-                const x = (pageWidth - drawWidth) / 2;
-                const y = (pageHeight - drawHeight) / 2;
-
-                if (idx === 0) {
-                    pdf.addImage(imgUrl, 'JPEG', x, y, drawWidth, drawHeight);
-                } else {
-                    pdf.addPage();
-                    pdf.addImage(imgUrl, 'JPEG', x, y, drawWidth, drawHeight);
-                }
-
-                URL.revokeObjectURL(imgUrl);
-                imagesLoaded++;
-
-                if (imagesLoaded === blobs.length) {
-                    pdf.save('merged_document.pdf');
-                    showToast('PDF downloaded successfully!');
-                }
-            };
-
-            img.onerror = () => {
-                URL.revokeObjectURL(imgUrl);
-                imagesLoaded++;
-                if (imagesLoaded === blobs.length && pdf) {
-                    pdf.save('merged_document.pdf');
-                }
-            };
-
-            img.src = imgUrl;
-        });
-    }
-
-    document.getElementById('downloadImgBtn').addEventListener('click', downloadAsImage);
-    document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
-
-    // ========== Helper Functions ==========
-    function showProgress(show) {
-        document.getElementById('progressBar').style.display = show ? 'block' : 'none';
-    }
-
-    function updateProgress(percent) {
-        document.getElementById('progressFill').style.width = percent + '%';
-    }
-
-    function showToast(message) {
-        const toast = document.createElement('div');
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2ed573;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: bold;
-            z-index: 2000;
-            animation: fadeIn 0.3s ease;
-        `;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
-    }
-
-    // ========== Mouse/Touch Interactions ==========
-    function getCanvasCoords(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        let clientX, clientY;
-        if (e.touches) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
+                low = testQuality + 1;
+            } else {
+                high = testQuality - 1;
+            }
         }
 
-        let x = (clientX - rect.left) * scaleX;
-        let y = (clientY - rect.top) * scaleY;
-        x = Math.max(0, Math.min(canvas.width, x));
-        y = Math.max(0, Math.min(canvas.height, y));
-        return { x, y };
-    }
+        if (!bestBlob || bestSize > targetBytes) {
+            let scale = 0.9;
+            while (scale > 0.2) {
+                const newW = Math.max(100, Math.floor(correctedCanvas.width * scale));
+                const newH = Math.max(100, Math.floor(correctedCanvas.height * scale));
+                const scaledCanvas = document.createElement('canvas');
+                scaledCanvas.width = newW;
+                scaledCanvas.height = newH;
+                scaledCanvas.getContext('2d').drawImage(correctedCanvas, 0, 0, newW, newH);
 
-    function handleStart(e) {
-        e.preventDefault();
-        if (!currentImage) return;
-
-        const { x, y } = getCanvasCoords(e);
-        let minDist = 30;
-        draggingPoint = -1;
-
-        points.forEach((point, idx) => {
-            const px = point.x * canvasWidth;
-            const py = point.y * canvasHeight;
-            const dist = Math.hypot(x - px, y - py);
-            if (dist < minDist) {
-                minDist = dist;
-                draggingPoint = idx;
+                for (let q of [80, 70, 60, 50, 40, 30]) {
+                    const blob = await new Promise(res => scaledCanvas.toBlob(res, mimeType, q / 100));
+                    if (blob.size <= targetBytes) {
+                        bestBlob = blob;
+                        bestSize = blob.size;
+                        break;
+                    }
+                }
+                if (bestBlob && bestSize <= targetBytes) break;
+                scale -= 0.1;
             }
+        }
+
+        if (!bestBlob) {
+            bestBlob = await new Promise(res => correctedCanvas.toBlob(res, mimeType, 0.1));
+        }
+
+        resolve(bestBlob);
+    });
+}
+
+function showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, downloadCallback) {
+    const existingOverlay = document.querySelector('.confirm-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+
+    const saved = totalOriginal - totalNew;
+    const isCompressed = saved > 0;
+    const savedPercent = ((saved / totalOriginal) * 100).toFixed(1);
+
+    let breakdownHTML = '<div class="page-breakdown"><h4>📄 Page-wise Breakdown:</h4>';
+    for (let i = 0; i < originalSizes.length; i++) {
+        const pageSaved = originalSizes[i] - newSizes[i];
+        breakdownHTML += `
+            <div class="page-item">
+                <span class="page-num">Page ${i + 1}:</span>
+                <span>${originalSizes[i].toFixed(1)} KB → </span>
+                <span class="page-size">${newSizes[i].toFixed(1)} KB</span>
+                <span style="color: ${pageSaved > 0 ? '#2ed573' : '#ff4757'}">
+                    (${pageSaved > 0 ? '↓' : '↑'} ${Math.abs(pageSaved).toFixed(1)} KB)
+                </span>
+            </div>
+        `;
+    }
+    breakdownHTML += `<div class="total-info" style="padding-top:8px;margin-top:8px;border-top:1px solid #444;">
+        <strong>Total Original:</strong> ${totalOriginal.toFixed(1)} KB<br>
+        <strong>Total New:</strong> ${totalNew.toFixed(1)} KB<br>
+        <strong>Overall ${isCompressed ? 'Saved' : 'Increased'}:</strong> ${Math.abs(saved).toFixed(1)} KB (${Math.abs(savedPercent)}%)
+    </div></div>`;
+
+    overlay.innerHTML = `
+        <div class="confirm-dialog">
+            <h3>📊 Multi-Page Download Confirmation</h3>
+            <div class="size-info">
+                <div style="margin-bottom: 8px;">📁 Original Total Size:</div>
+                <div class="original-size">${totalOriginal.toFixed(1)} KB</div>
+                <div style="margin: 12px 0 8px 0;">✨ New Total Size:</div>
+                <div class="new-size">${totalNew.toFixed(1)} KB</div>
+                ${isCompressed ?
+                    `<div class="saved">✅ Saved: ${saved.toFixed(1)} KB (${savedPercent}% smaller)</div>` :
+                    `<div class="increased">⚠️ Increased: ${Math.abs(saved).toFixed(1)} KB (${Math.abs(savedPercent)}% larger)</div>`
+                }
+            </div>
+            ${breakdownHTML}
+            <div class="confirm-buttons">
+                <button class="btn-confirm" id="confirmDownload">✓ Download</button>
+                <button class="btn-cancel" id="cancelDownload">✗ Cancel</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    document.getElementById('confirmDownload').onclick = () => {
+        overlay.remove();
+        downloadCallback();
+    };
+
+    document.getElementById('cancelDownload').onclick = () => {
+        overlay.remove();
+    };
+
+    overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+    };
+}
+
+async function downloadAsImage() {
+    if (!images.length) { alert('Please load an image first'); return; }
+    autoSaveCurrentState();
+
+    const btn = document.getElementById('downloadImgBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Processing...';
+    btn.disabled = true;
+
+    try {
+        const format = document.getElementById('outputFormat').value;
+        const quality = parseInt(document.getElementById('quality').value) || 90;
+        const targetKB = parseInt(document.getElementById('targetKB').value) || null;
+
+        const originalSizes = images.map(img => img.sizeKB);
+        const blobs = [];
+
+        showProgress(true);
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            const blob = await getCorrectedBlobExact(format, quality, targetKB, img.imageElement, img.points);
+            blobs.push(blob);
+            updateProgress((i + 1) / images.length * 100);
+        }
+        showProgress(false);
+
+        const newSizes = blobs.map(b => b.size / 1024);
+        const totalOriginal = originalSizes.reduce((a, b) => a + b, 0);
+        const totalNew = newSizes.reduce((a, b) => a + b, 0);
+
+        showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, () => {
+            blobs.forEach((blob, i) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `scanned_page_${i + 1}.${format === 'jpeg' ? 'jpg' : format}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 500);
+            });
+            showToast(`Downloaded ${images.length} image(s)`);
         });
+    } catch(e) {
+        alert('Error: ' + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+async function downloadAsPDF() {
+    if (!images.length) { alert('Please load an image first'); return; }
+    autoSaveCurrentState();
+
+    const btn = document.getElementById('downloadPdfBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner"></span> Generating PDF...';
+    btn.disabled = true;
+    showProgress(true);
+
+    try {
+        const quality = parseInt(document.getElementById('quality').value) || 90;
+        const targetKB = parseInt(document.getElementById('targetKB').value) || null;
+
+        const originalSizes = images.map(img => img.sizeKB);
+        const blobs = [];
+
+        updateProgress(0);
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            const blob = await getCorrectedBlobExact('jpeg', quality, targetKB, img.imageElement, img.points);
+            blobs.push(blob);
+            updateProgress((i + 1) / images.length * 100);
+        }
+
+        const newSizes = blobs.map(b => b.size / 1024);
+        const totalOriginal = originalSizes.reduce((a, b) => a + b, 0);
+        const totalNew = newSizes.reduce((a, b) => a + b, 0);
+
+        showMultiPageConfirmDialog(originalSizes, newSizes, totalOriginal, totalNew, () => {
+            generatePDFFromBlobs(blobs);
+        });
+    } catch(e) {
+        alert('PDF Error: ' + e.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        showProgress(false);
+    }
+}
+
+function generatePDFFromBlobs(blobs) {
+    const { jsPDF } = window.jspdf;
+
+    if (blobs.length === 0) {
+        alert('No images to generate PDF');
+        return;
     }
 
-    function handleMove(e) {
-        if (draggingPoint === -1 || !currentImage) return;
-        e.preventDefault();
+    let pdf = null;
+    let imagesLoaded = 0;
 
-        const { x, y } = getCanvasCoords(e);
-        points[draggingPoint] = {
-            x: x / canvasWidth,
-            y: y / canvasHeight
+    blobs.forEach((blob, idx) => {
+        const imgUrl = URL.createObjectURL(blob);
+        const img = new Image();
+
+        img.onload = () => {
+            if (pdf === null) {
+                const orientation = img.width > img.height ? 'landscape' : 'portrait';
+                pdf = new jsPDF({ orientation, unit: 'mm' });
+            }
+
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const ratio = Math.min(pageWidth / img.width, pageHeight / img.height);
+            const drawWidth = img.width * ratio;
+            const drawHeight = img.height * ratio;
+            const x = (pageWidth - drawWidth) / 2;
+            const y = (pageHeight - drawHeight) / 2;
+
+            if (idx === 0) {
+                pdf.addImage(imgUrl, 'JPEG', x, y, drawWidth, drawHeight);
+            } else {
+                pdf.addPage();
+                pdf.addImage(imgUrl, 'JPEG', x, y, drawWidth, drawHeight);
+            }
+
+            URL.revokeObjectURL(imgUrl);
+            imagesLoaded++;
+
+            if (imagesLoaded === blobs.length) {
+                pdf.save('merged_document.pdf');
+                showToast('PDF downloaded successfully!');
+            }
         };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(imgUrl);
+            imagesLoaded++;
+            if (imagesLoaded === blobs.length && pdf) {
+                pdf.save('merged_document.pdf');
+            }
+        };
+
+        img.src = imgUrl;
+    });
+}
+
+document.getElementById('downloadImgBtn').addEventListener('click', downloadAsImage);
+document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPDF);
+
+// ========== Helper Functions ==========
+function showProgress(show) {
+    document.getElementById('progressBar').style.display = show ? 'block' : 'none';
+}
+
+function updateProgress(percent) {
+    document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2ed573;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: bold;
+        z-index: 2000;
+        animation: fadeIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+}
+
+// ========== Mouse/Touch Interactions ==========
+function getCanvasCoords(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    let clientX, clientY;
+    if (e.touches) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    let x = (clientX - rect.left) * scaleX;
+    let y = (clientY - rect.top) * scaleY;
+    x = Math.max(0, Math.min(canvas.width, x));
+    y = Math.max(0, Math.min(canvas.height, y));
+    return { x, y };
+}
+
+function handleStart(e) {
+    e.preventDefault();
+    if (!currentImage) return;
+
+    const { x, y } = getCanvasCoords(e);
+    let minDist = 30;
+    draggingPoint = -1;
+
+    points.forEach((point, idx) => {
+        const px = point.x * canvasWidth;
+        const py = point.y * canvasHeight;
+        const dist = Math.hypot(x - px, y - py);
+        if (dist < minDist) {
+            minDist = dist;
+            draggingPoint = idx;
+        }
+    });
+}
+
+function handleMove(e) {
+    if (draggingPoint === -1 || !currentImage) return;
+    e.preventDefault();
+
+    const { x, y } = getCanvasCoords(e);
+    points[draggingPoint] = {
+        x: x / canvasWidth,
+        y: y / canvasHeight
+    };
+    autoSaveCurrentState();
+    drawCanvas();
+    updatePreview();
+}
+
+function handleEnd() {
+    draggingPoint = -1;
+}
+
+canvas.addEventListener('mousedown', handleStart);
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('mouseup', handleEnd);
+
+canvas.addEventListener('touchstart', handleStart, { passive: false });
+window.addEventListener('touchmove', handleMove, { passive: false });
+window.addEventListener('touchend', handleEnd);
+
+window.addEventListener('resize', () => {
+    if (currentImage) {
+        updateCanvasSize();
         drawCanvas();
         updatePreview();
     }
+});
 
-    function handleEnd() {
-        draggingPoint = -1;
-    }
-
-    canvas.addEventListener('mousedown', handleStart);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleEnd);
-
-    canvas.addEventListener('touchstart', handleStart, { passive: false });
-    window.addEventListener('touchmove', handleMove, { passive: false });
-    window.addEventListener('touchend', handleEnd);
-
-    window.addEventListener('resize', () => {
-        if (currentImage) {
-            updateCanvasSize();
-            drawCanvas();
-            updatePreview();
-        }
-    });
-
-    document.getElementById('quality').addEventListener('change', () => updatePreview());
-    document.getElementById('outputFormat').addEventListener('change', () => updatePreview());
+document.getElementById('quality').addEventListener('change', () => {
+    autoSaveCurrentState();
+    updatePreview();
+});
+document.getElementById('outputFormat').addEventListener('change', () => {
+    autoSaveCurrentState();
+    updatePreview();
+});
 </script>
 </body>
 </html>

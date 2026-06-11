@@ -2,9 +2,9 @@ name: Keep Render Alive Direct
 
 on:
   schedule:
-    # GitHub ke scheduler ko stable rakhne ke liye har 15 minute ka interval
+    # Yeh har 14 minute me automatic chalega
     - cron: '*/15 * * * *'
-  workflow_dispatch: # Manual testing ke liye
+  workflow_dispatch: # Isse aap GitHub dashboard se manually bhi run kar sakte hain
 
 jobs:
   ping_render:
@@ -12,5 +12,4 @@ jobs:
     steps:
       - name: Direct Ping to Render API
         run: |
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://renver.onrender.com)
-          echo "Render responded with HTTP Status: $STATUS_CODE"
+          curl -s -o /dev/null -w "%{http_code}" https://renver.onrender.com
