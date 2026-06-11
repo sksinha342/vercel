@@ -13,3 +13,4 @@ Werkzeug==3.0.0
 pyvips==2.2.1
 cffi==1.16.0
 numpy==1.26.2
+python-dotenv==1.0.1
