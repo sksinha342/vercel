@@ -94,6 +94,14 @@ ALL_TOOLS = load_tools()
 def index():
     return render_template("index.html", tools=ALL_TOOLS)
 
+@app.route('/pdf-edite',methods=["GET"])
+def pdf1():
+    return render_template('pdf1.html')
+@app.route('/save-pdf', methods=['POST'])
+def save_pdf():
+    # Loop back or save modified pdf blob if needed from frontend
+    return jsonify({'status': 'success', 'message': 'PDF Processed successfully on server'})
+
 # CRON JOB ROUTE: Vercel is URL ko hit karega
 @app.route("/api/cron", methods=["GET"])
 def daily_db_cron():
@@ -118,6 +126,7 @@ def daily_db_cron():
             return jsonify({"status": "error", "message": f"Query failed: {str(query_err)}"}), 500
     else:
         return jsonify({"status": "failed", "message": "Could not establish database connection."}), 500
+
 
 
 if __name__ == "__main__":

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic PDF Editor - Professional Suite</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans Devanagari', sans-serif;
+            background-color: #0f172a;
+        }
+        .canvas-container {
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col">
+{% raw %}
+    <div id="app" class="flex flex-col flex-grow h-screen overflow-hidden">
+        
+        <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between shadow-md z-10">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">⚡</span>
+                <h1 class="text-xl font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
+                    Elastic PDF Editor Pro
+                </h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <label class="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white px-4 py-2 rounded-lg cursor-pointer transition font-medium text-sm shadow-lg">
+                    <span>📂 PDF अपलोड करें</span>
+                    <input type="file" accept="application/pdf" @change="handleFileUpload" class="hidden">
+                </label>
+
+                <button v-if="pdfDoc" @click="exportPDF" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg transition font-medium text-sm shadow-lg">
+                    <span>💾 PDF डाउनलोड करें</span>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-grow overflow-hidden">
+            
+            <aside class="w-80 bg-slate-900 border-r border-slate-800 flex flex-col overflow-y-auto p-4 space-y-6">
+                
+                <div v-if="pdfDoc" class="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
+                    <p class="text-xs text-slate-400 uppercase tracking-wider font-bold">दस्तावेज़ की स्थिति</p>
+                    <p class="text-sm font-medium mt-1 text-cyan-400">कुल पेजेस: {{ numPages }}</p>
+                    
+                    <div class="flex items-center justify-between mt-3 bg-slate-900 p-2 rounded-lg">
+                        <button @click="changePage(-1)" :disabled="currentPage <= 1" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-xs transition">⬅ पिछला</button>
+                        <span class="text-xs font-semibold">पेज {{ currentPage }} / {{ numPages }}</span>
+                        <button @click="changePage(1)" :disabled="currentPage >= numPages" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 rounded text-xs transition">अगला ➡</button>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">मुख्य टूल्स</h3>
+                    <button @click="setSelectMode" :class="!isDrawingMode ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'" class="w-full text-left px-4 py-3 rounded-xl border flex items-center space-x-3 transition font-medium">
+                        <span>🖱️</span>
+                        <span>सेलेक्ट और एडिट मोड</span>
+                    </button>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">फ्रीहैंड ड्राइंग (Pen Tool)</h3>
+                    <button @click="toggleDrawingMode" :class="isDrawingMode ? 'bg-amber-600 border-amber-400 text-white' : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-300'" class="w-full text-left px-4 py-3 rounded-xl border flex items-center space-x-3 transition font-medium">
+                        <span>✏️</span>
+                        <span>{{ isDrawingMode ? 'ड्राइंग मोड ऑन है' : 'पेन टूल चालू करें' }}</span>
+                    </button>
+                    
+                    <div v-if="isDrawingMode" class="bg-slate-800/40 p-3 rounded-xl border border-slate-700/60 space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">पेन का रंग:</label>
+                            <input type="color" v-model="brushColor" @input="updateBrush" class="w-full h-8 bg-transparent rounded cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-400 block mb-1">पेन की मोटाई: {{ brushWidth }}px</label>
+                            <input type="range" min="1" max="20" v-model="brushWidth" @input="updateBrush" class="w-full accent-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">नया टेक्स्ट जोड़ें (Hindi Supported)</h3>
+                    <div class="flex flex-col space-y-2">
+                        <textarea v-model="newText" placeholder="यहाँ टेक्स्ट लिखें (हिंदी टाइपिंग समर्थित)..." class="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-200 focus:outline-none focus:border-cyan-500" rows="2"></textarea>
+                        <button @click="addNewText" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-2">
+                            <span>➕</span> <span>टेक्स्ट ऐड करें</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">इमेज जोड़ें या बदलें</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        <label class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-2 cursor-pointer text-center">
+                            <span>🖼️</span> <span>नई इमेज जोड़ें</span>
+                            <input type="file" accept="image/*" @change="handleAddImage" class="hidden">
+                        </label>
+                        <label class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-2 cursor-pointer text-center">
+                            <span>🔄</span> <span>सेलेक्टेड इमेज बदलें</span>
+                            <input type="file" accept="image/*" @change="handleReplaceImage" class="hidden">
+                        </label>
+                    </div>
+                </div>
+
+                <div v-if="hasActiveObject" class="bg-slate-800/80 p-3 rounded-xl border border-rose-900/30 space-y-2 mt-auto">
+                    <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider">सेलेक्टेड ऑब्जेक्ट सेटिंग्स</h4>
+                    <button @click="deleteSelected" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg text-xs font-bold transition flex items-center justify-center space-x-2 shadow-md">
+                        <span>🗑️</span> <span>हटाएं (Delete)</span>
+                    </button>
+                </div>
+
+            </aside>
+
+            <main class="flex-grow bg-slate-950 overflow-auto p-8 flex items-start justify-center relative">
+                
+                <div v-if="!pdfDoc" class="text-center my-auto max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl flex flex-col items-center">
+                    <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-3xl mb-4 shadow-inner">📄</div>
+                    <h2 class="text-xl font-bold text-slate-100 mb-2">अपनी PDF फाइल लोड करें</h2>
+                    <p class="text-sm text-slate-400 leading-relaxed mb-6">
+                        ऊपर दिए गए बटन पर क्लिक करके PDF फाइल सेलेक्ट करें। आप इसमें मौजूदा टेक्स्ट बदल पाएंगे, हिंदी लिख पाएंगे, पेन से ड्रा कर पाएंगे और इमेजेस भी बदल पाएंगे।
+                    </p>
+                </div>
+
+                <div v-show="pdfDoc" class="relative bg-white rounded-lg shadow-2xl overflow-hidden transition-all">
+                    <canvas id="pdf-editor-canvas"></canvas>
+                </div>
+
+            </main>
+        </div>
+    </div>
+{% endraw %}
+    <script>
+        // Setup worker src for PDF.js safely via CDN
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const pdfDoc = ref(null);
+                const numPages = ref(0);
+                const currentPage = ref(1);
+                const isDrawingMode = ref(false);
+                const brushColor = ref('#10b981'); 
+                const brushWidth = ref(4);
+                const newText = ref('यहाँ हिंदी में नया बदलाव जोड़ें');
+                const hasActiveObject = ref(false);
+                
+                let fCanvas = null;
+                let currentPdfPage = null;
+                const scaleFactor = 1.5; // Clarity scale
+
+                onMounted(() => {
+                    // Initialize Fabric Canvas
+                    fCanvas = new fabric.Canvas('pdf-editor-canvas', {
+                        freeDrawingBrush: new fabric.PencilBrush(),
+                        preserveObjectStacking: true
+                    });
+
+                    // Track active objects
+                    fCanvas.on('selection:created', () => { hasActiveObject.value = true; });
+                    fCanvas.on('selection:updated', () => { hasActiveObject.value = true; });
+                    fCanvas.on('selection:cleared', () => { hasActiveObject.value = false; });
+                });
+
+                // Load PDF file
+                const handleFileUpload = (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const arrayBuffer = e.target.result;
+                        
+                        pdfjsLib.getDocument({ data: arrayBuffer }).promise.then((pdf) => {
+                            pdfDoc.value = pdf;
+                            numPages.value = pdf.numPages;
+                            currentPage.value = 1;
+                            loadPage(1);
+                        }).catch(err => {
+                            console.error(err);
+                            alert("PDF लोड करने में त्रुटि: " + err.message);
+                        });
+                    };
+                    reader.readAsArrayBuffer(file);
+                };
+
+                // CRITICAL FIX: Direct HTML Canvas rendering to prevent dataURL crashes
+                const loadPage = async (pageNumber) => {
+                    if (!pdfDoc.value) return;
+                    fCanvas.clear();
+                    isDrawingMode.value = false;
+                    fCanvas.isDrawingMode = false;
+
+                    try {
+                        currentPdfPage = await pdfDoc.value.getPage(pageNumber);
+                        const viewport = currentPdfPage.getViewport({ scale: scaleFactor });
+
+                        // Correctly set fabric canvas dimension matching the PDF page
+                        fCanvas.setWidth(viewport.width);
+                        fCanvas.setHeight(viewport.height);
+
+                        // Setup a clean temporary canvas
+                        const tempCanvas = document.createElement('canvas');
+                        tempCanvas.width = viewport.width;
+                        tempCanvas.height = viewport.height;
+                        const tempCtx = tempCanvas.getContext('2d');
+
+                        const renderContext = {
+                            canvasContext: tempCtx,
+                            viewport: viewport
+                        };
+                        
+                        // Wait for PDF engine to finish drawing
+                        await currentPdfPage.render(renderContext).promise;
+
+                        // FIX: Pass DOM element directly into Fabric Image constructor
+                        const backgroundImg = new fabric.Image(tempCanvas, {
+                            width: viewport.width,
+                            height: viewport.height,
+                            originX: 'left',
+                            originY: 'top'
+                        });
+
+                        // Set as background and then parse texts safely
+                        fCanvas.setBackgroundImage(backgroundImg, () => {
+                            fCanvas.renderAll();
+                            extractAndOverlayText(currentPdfPage, viewport);
+                        });
+
+                    } catch (error) {
+                        console.error("Page render error:", error);
+                        alert("पेज रेंडर करने में एरर आया है।");
+                    }
+                };
+
+                // Extract existing PDF text items and make them elastic editable blocks
+                const extractAndOverlayText = async (page, viewport) => {
+                    try {
+                        const textContent = await page.getTextContent();
+                        
+                        textContent.items.forEach((item) => {
+                            if (!item.str.trim()) return;
+
+                            // Translate matrix position
+                            const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+                            const fontSize = item.height * scaleFactor;
+                            const leftPos = tx[4];
+                            // PDF coordinates baseline layout correction
+                            const topPos = tx[5] - fontSize; 
+
+                            const textOverlay = new fabric.IText(item.str, {
+                                left: leftPos,
+                                top: topPos,
+                                fontSize: fontSize > 0 ? fontSize : 14,
+                                fontFamily: 'Noto Sans Devanagari',
+                                fill: '#000000',
+                                backgroundColor: '#ffffff', // White mask to hide old text underneath
+                                transparentCorners: false,
+                                cornerColor: '#3b82f6',
+                                cornerSize: 6
+                            });
+
+                            fCanvas.add(textOverlay);
+                        });
+                        fCanvas.renderAll();
+                    } catch (err) {
+                        console.error("Text extraction failed:", err);
+                    }
+                };
+
+                const changePage = (direction) => {
+                    const targetPage = currentPage.value + direction;
+                    if (targetPage >= 1 && targetPage <= numPages.value) {
+                        currentPage.value = targetPage;
+                        loadPage(targetPage);
+                    }
+                };
+
+                const setSelectMode = () => {
+                    isDrawingMode.value = false;
+                    fCanvas.isDrawingMode = false;
+                };
+
+                const toggleDrawingMode = () => {
+                    isDrawingMode.value = !isDrawingMode.value;
+                    fCanvas.isDrawingMode = isDrawingMode.value;
+                    if (isDrawingMode.value) {
+                        updateBrush();
+                    }
+                };
+
+                const updateBrush = () => {
+                    if (!fCanvas.freeDrawingBrush) return;
+                    fCanvas.freeDrawingBrush.color = brushColor.value;
+                    fCanvas.freeDrawingBrush.width = parseInt(brushWidth.value, 10);
+                };
+
+                const addNewText = () => {
+                    if (!newText.value.trim()) return;
+                    
+                    const textNode = new fabric.IText(newText.value, {
+                        left: 100,
+                        top: 150,
+                        fontSize: 24,
+                        fontFamily: 'Noto Sans Devanagari',
+                        fill: '#1e293b',
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        padding: 6
+                    });
+                    
+                    fCanvas.add(textNode);
+                    fCanvas.setActiveObject(textNode);
+                    fCanvas.renderAll();
+                };
+
+                const handleAddImage = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        fabric.Image.fromURL(f.target.result, (img) => {
+                            img.scaleToWidth(200);
+                            img.set({ left: 100, top: 100 });
+                            fCanvas.add(img);
+                            fCanvas.setActiveObject(img);
+                            fCanvas.renderAll();
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                const handleReplaceImage = (e) => {
+                    const activeObj = fCanvas.getActiveObject();
+                    if (!activeObj || activeObj.type !== 'image') {
+                        alert("कृपया बदलने के लिए पहले कैनवास पर किसी इमेज को सेलेक्ट करें!");
+                        return;
+                    }
+
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (f) => {
+                        fabric.Image.fromURL(f.target.result, (newImg) => {
+                            newImg.set({
+                                left: activeObj.left,
+                                top: activeObj.top,
+                                scaleX: activeObj.scaleX * (200 / newImg.width),
+                                scaleY: activeObj.scaleY * (200 / newImg.width),
+                                angle: activeObj.angle
+                            });
+                            
+                            fCanvas.remove(activeObj);
+                            fCanvas.add(newImg);
+                            fCanvas.setActiveObject(newImg);
+                            fCanvas.renderAll();
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                };
+
+                const deleteSelected = () => {
+                    const active = fCanvas.getActiveObject();
+                    if (active) {
+                        fCanvas.remove(active);
+                        fCanvas.renderAll();
+                    }
+                };
+
+                const exportPDF = () => {
+                    const { jsPDF } = window.jspdf;
+                    
+                    const pdfOutput = new jsPDF({
+                        orientation: fCanvas.width > fCanvas.height ? 'l' : 'p',
+                        unit: 'px',
+                        format: [fCanvas.width, fCanvas.height]
+                    });
+
+                    const canvasDataUrl = fCanvas.toDataURL({
+                        format: 'png',
+                        quality: 1.0
+                    });
+
+                    pdfOutput.addImage(canvasDataUrl, 'PNG', 0, 0, fCanvas.width, fCanvas.height);
+                    pdfOutput.save('Elastic_Edited_Document.pdf');
+                };
+
+                return {
+                    pdfDoc, numPages, currentPage, isDrawingMode, brushColor, brushWidth,
+                    newText, hasActiveObject, handleFileUpload, changePage, setSelectMode,
+                    toggleDrawingMode, updateBrush, addNewText, handleAddImage, handleReplaceImage,
+                    deleteSelected, exportPDF
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

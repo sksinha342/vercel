@@ -689,6 +689,7 @@ function loadImageAtIndex(index) {
     originalHeight = imgData.originalHeight;
     points = JSON.parse(JSON.stringify(imgData.points));
     currentRotation = imgData.rotation;
+    currentImage = imgData.imageElement;
     originalFileSizeKB = imgData.sizeKB;
     isImageLoaded = true;
 
@@ -703,6 +704,7 @@ function autoSaveCurrentState() {
     if (images.length && isImageLoaded) {
         images[currentIndex].points = JSON.parse(JSON.stringify(points));
         images[currentIndex].rotation = currentRotation;
+
         images[currentIndex].imageElement = currentImage;
         images[currentIndex].originalWidth = originalWidth;
         images[currentIndex].originalHeight = originalHeight;
@@ -876,56 +878,70 @@ function clearCanvas() {
 function rotateImage(degrees) {
     if (!currentImage || !isImageLoaded) return;
 
-    // 1. Canvas par real-time angle ko update karein
     const rotatedCanvas = document.createElement('canvas');
-    
-    // Width aur Height ko flip karenge kyunki 90deg rotate ho rha hai
+
     rotatedCanvas.width = originalHeight;
     rotatedCanvas.height = originalWidth;
 
     const rotatedCtx = rotatedCanvas.getContext('2d');
-    
-    // Center point par le ja kar ghumayein
-    rotatedCtx.translate(rotatedCanvas.width / 2, rotatedCanvas.height / 2);
-    const angleRad = (degrees * Math.PI) / 180;
-    rotatedCtx.rotate(angleRad);
-    rotatedCtx.drawImage(currentImage, -originalWidth / 2, -originalHeight / 2);
 
-    // 2. CRITICAL FIX: Crop points (corners) ko bhi 90 degree ghumana hoga
-    // Agar points nahi ghumenge toh crop selection galat jagah reh jayega
+    rotatedCtx.translate(
+        rotatedCanvas.width / 2,
+        rotatedCanvas.height / 2
+    );
+
+    rotatedCtx.rotate((degrees * Math.PI) / 180);
+
+    rotatedCtx.drawImage(
+        currentImage,
+        -originalWidth / 2,
+        -originalHeight / 2
+    );
+
     points = points.map(p => {
         if (degrees === 90) {
-            return { x: 1 - p.y, y: p.x }; // Clockwise rotation matrix logic
-        } else if (degrees === -90 || degrees === 270) {
-            return { x: p.y, y: 1 - p.x }; // Counter-clockwise rotation logic
+            return { x: 1 - p.y, y: p.x };
+        } else {
+            return { x: p.y, y: 1 - p.x };
         }
-        return p;
     });
 
-    // 3. Naye rotated state ko image element me update karein
     const rotatedImg = new Image();
+
     rotatedImg.onload = () => {
+
         currentImage = rotatedImg;
         originalWidth = rotatedImg.width;
         originalHeight = rotatedImg.height;
 
-        // State ko globally array me sync karein taaki save/preview dono ko naya data mile
-        if (images.length && images[currentIndex]) {
-            images[currentIndex].imageElement = currentImage;
-            images[currentIndex].originalWidth = originalWidth;
-            images[currentIndex].originalHeight = originalHeight;
-            images[currentIndex].points = JSON.parse(JSON.stringify(points));
+        if (images[currentIndex]) {
+
+            images[currentIndex].imageElement = rotatedImg;
+
+            images[currentIndex].originalWidth =
+                rotatedImg.width;
+
+            images[currentIndex].originalHeight =
+                rotatedImg.height;
+
+            images[currentIndex].points =
+                JSON.parse(JSON.stringify(points));
+
+            images[currentIndex].rotation =
+                ((images[currentIndex].rotation || 0)
+                + degrees + 360) % 360;
         }
 
-        // Sabhi ui elements aur live preview ko refresh karein
         updateCanvasSize();
         drawCanvas();
         updatePreview();
         updateThumbnails();
+
+        autoSaveCurrentState();
     };
-    
-    // PNG format use kar rhe hain bina quality lose kiye sync karne ke liye
-    rotatedImg.src = rotatedCanvas.toDataURL('image/png');
+
+    rotatedImg.src =
+        rotatedCanvas.toDataURL('image/png');
 }
     
 document.getElementById('rotateLeft90').addEventListener('click', () => {
