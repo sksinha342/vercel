@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Passport Photo Sheet Generator</title>
+
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<!-- Cropper.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<style>
+  :root{
+    --bg-deep-1:#0f1027;
+    --bg-deep-2:#1b1240;
+    --bg-deep-3:#2a1a5e;
+    --accent:#7c5cff;
+    --accent-2:#37c9ff;
+    --card-bg:rgba(255,255,255,0.06);
+    --card-border:rgba(255,255,255,0.12);
+    --text-main:#eef0ff;
+    --text-dim:#a6a9d0;
+    --danger:#ff5c7a;
+    --success:#3ddc97;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(124,92,255,0.25), transparent 40%),
+      radial-gradient(circle at 85% 85%, rgba(55,201,255,0.18), transparent 45%),
+      linear-gradient(160deg, var(--bg-deep-1), var(--bg-deep-2) 45%, var(--bg-deep-3));
+    color:var(--text-main);
+    min-height:100vh;
+    padding:32px 16px 80px;
+  }
+
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  .hero{
+    text-align:center;
+    margin-bottom:32px;
+  }
+  .hero h1{
+    font-size:2rem;
+    margin:0 0 8px;
+    display:flex; align-items:center; justify-content:center; gap:12px;
+  }
+  .hero h1 i{color:var(--accent-2);}
+  .hero p{color:var(--text-dim); margin:0; font-size:0.95rem;}
+
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--card-border);
+    border-radius:18px;
+    padding:24px;
+    backdrop-filter:blur(14px);
+    box-shadow:0 10px 40px rgba(0,0,0,0.35);
+    margin-bottom:24px;
+  }
+  .card h2{
+    font-size:1.05rem;
+    margin:0 0 18px;
+    display:flex; align-items:center; gap:10px;
+    color:var(--text-main);
+  }
+  .card h2 i{color:var(--accent);}
+
+  .controls-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:18px;
+  }
+
+  .field label{
+    display:block;
+    font-size:0.8rem;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    letter-spacing:0.02em;
+  }
+  .field select, .field input[type="number"]{
+    width:100%;
+    padding:11px 14px;
+    border-radius:10px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.05);
+    color:var(--text-main);
+    font-size:0.95rem;
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field select:focus, .field input[type="number"]:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(124,92,255,0.25);
+  }
+  .field select option{background:#1b1240; color:#fff;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 20px;
+    border-radius:10px;
+    border:none;
+    font-size:0.92rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .12s ease, filter .12s ease, opacity .12s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{
+    background:linear-gradient(120deg, var(--accent), var(--accent-2));
+    color:#0f1027;
+  }
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-outline{
+    background:transparent;
+    border:1px solid var(--card-border);
+    color:var(--text-main);
+  }
+  .btn-outline:hover{border-color:var(--accent);}
+  .btn-danger{
+    background:rgba(255,92,122,0.15);
+    color:var(--danger);
+    border:1px solid rgba(255,92,122,0.4);
+    padding:7px 10px;
+    font-size:0.8rem;
+  }
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  /* ---- People list ---- */
+  #peopleList{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+    gap:16px;
+    margin-bottom:18px;
+  }
+  .person-card{
+    background:rgba(255,255,255,0.04);
+    border:1px solid var(--card-border);
+    border-radius:14px;
+    padding:12px;
+    text-align:center;
+    position:relative;
+  }
+  .person-card .thumb{
+    width:100%;
+    aspect-ratio:4/5;
+    border-radius:10px;
+    overflow:hidden;
+    background:rgba(0,0,0,0.25);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:10px;
+    border:1px dashed var(--card-border);
+  }
+  .person-card .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .person-card .thumb i{font-size:1.4rem; color:var(--text-dim);}
+  .person-card .name{font-size:0.82rem; color:var(--text-dim); margin-bottom:8px; word-break:break-word;}
+  .person-card input[type="number"]{
+    width:100%;
+    padding:7px 8px;
+    border-radius:8px;
+    border:1px solid var(--card-border);
+    background:rgba(255,255,255,0.06);
+    color:var(--text-main);
+    text-align:center;
+    font-size:0.85rem;
+  }
+  .person-card .copies-label{font-size:0.7rem; color:var(--text-dim); margin:8px 0 4px;}
+  .person-card .remove-btn{
+    position:absolute; top:8px; right:8px;
+    width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(255,92,122,0.18);
+    color:var(--danger);
+    border:none; cursor:pointer; font-size:0.75rem;
+  }
+  .person-card .recrop-btn{
+    margin-top:8px; width:100%; font-size:0.72rem; padding:6px;
+  }
+
+  /* ---- Preview Area Fixes ---- */
+  .preview-outer{
+    display:flex; justify-content:center; padding:10px 0;
+  }
+  #previewSheet {
+    background:#ffffff;
+    border-radius:6px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    width:100%;
+    max-width:460px;
+    aspect-ratio:210/297;
+    padding:3% 2.5%;
+    display:grid;
+    align-content:start;
+    overflow:hidden;
+  }
+  .preview-cell{
+    aspect-ratio:4/5;
+    background-size:cover;
+    background-position:center;
+    border:1px solid #ddd;
+    border-radius:1px;
+    width:100%;
+  }
+  .preview-empty{
+    color:#94a3b8;
+    font-size:0.85rem;
+    text-align:center;
+    padding:60px 20px;
+    grid-column:1 / -1;
+  }
+
+  .summary-bar{
+    display:flex; flex-wrap:wrap; gap:14px;
+    justify-content:center;
+    margin-top:16px;
+    font-size:0.82rem;
+    color:var(--text-dim);
+  }
+  .summary-bar b{color:var(--text-main);}
+
+  .actions-row{
+    display:flex; justify-content:center; gap:14px; margin-top:22px; flex-wrap:wrap;
+  }
+
+  #statusMsg{
+    text-align:center;
+    margin-top:14px;
+    font-size:0.88rem;
+    min-height:20px;
+  }
+  #statusMsg.error{color:var(--danger);}
+  #statusMsg.success{color:var(--success);}
+
+  input[type="file"]{display:none;}
+
+  /* ---- Crop Modal ---- */
+  .modal-overlay{
+    position:fixed; inset:0;
+    background:rgba(5,5,15,0.75);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center; justify-content:center;
+    z-index:999;
+    padding:20px;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-box{
+    background:var(--bg-deep-2);
+    border:1px solid var(--card-border);
+    border-radius:16px;
+    padding:20px;
+    max-width:520px;
+    width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  }
+  .modal-box h3{margin:0 0 14px; font-size:1rem; display:flex; align-items:center; gap:8px;}
+  .crop-container{
+    width:100%;
+    height:360px;
+    background:#111;
+    border-radius:10px;
+    overflow:hidden;
+  }
+  .crop-container img{max-width:100%; display:block;}
+  .modal-actions{
+    display:flex; justify-content:flex-end; gap:10px; margin-top:16px;
+  }
+
+  @media (max-width:640px){
+    .hero h1{font-size:1.5rem;}
+    .card{padding:18px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hero">
+    <h1><i class="fa-solid fa-id-card-clip"></i> Smart Passport Photo Sheet Generator</h1>
+    <p>Upload photos, set copies per person, and compile a print-ready passport photo sheet in seconds.</p>
+  </div>
+
+  <div class="card">
+    <h2><i class="fa-solid fa-sliders"></i> Sheet Configuration</h2>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="pageSize">Page Size</label>
+        <select id="pageSize">
+          <option value="a4" selected>A4 (210 x 297 mm)</option>
+          <option value="4x6">4 x 6 inch (Photo Print)</option>
+          <option value="5x7">5 x 7 inch (Photo Print)</option>
+          <option value="letter">US Letter (8.5 x 11 in)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="columns">Photos per Row (Columns)</label>
+        <input type="number" id="columns" min="1" max="20" value="6">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><i class="fa-solid fa-people-group"></i> People / Photos</h2>
+    <div id="peopleList"></div>
+    <button class="btn btn-outline" id="addPersonBtn">
+      <i class="fa-solid fa-user-plus"></i> Add Person / Upload Image
+    </button>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <div class="card">
+    <h2><i class="fa-solid fa-eye"></i> Live Print Preview</h2>
+    <div class="preview-outer">
+      <div id="previewSheet">
+        <div class="preview-empty">Add a person and crop a photo to see the live layout preview here.</div>
+      </div>
+    </div>
+    <div class="summary-bar">
+      <span>Total Photos: <b id="totalPhotosCount">0</b></span>
+      <span>Columns: <b id="summaryColumns">6</b></span>
+      <span>Photos per Page: <b id="summaryPerPage">42</b></span>
+      <span>Pages: <b id="summaryPages">1</b></span>
+    </div>
+
+    <div class="actions-row">
+      <button class="btn btn-primary" id="generateBtn">
+        <i class="fa-solid fa-print"></i> Generate & Download Sheet
+      </button>
+    </div>
+    <div id="statusMsg"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cropModal">
+  <div class="modal-box">
+    <h3><i class="fa-solid fa-crop"></i> Crop Photo (4:5 Passport Ratio)</h3>
+    <div class="crop-container">
+      <img id="cropTargetImg" src="">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="cancelCropBtn">Cancel</button>
+      <button class="btn btn-primary" id="confirmCropBtn"><i class="fa-solid fa-check"></i> Crop & Use</button>
+    </div>
+  </div>
+</div>
+
+<script>
+$(function () {
+  let people = [];          
+  let personCounter = 0;
+  let cropper = null;
+  let pendingPersonId = null;
+
+  $('#addPersonBtn').on('click', function () {
+    $('#fileInput').val('').trigger('click');
+  });
+
+  $('#fileInput').on('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      personCounter += 1;
+      const newPerson = { id: 'p' + personCounter, name: 'Person ' + personCounter, croppedImage: null, copies: 42 };
+      people.push(newPerson);
+      pendingPersonId = newPerson.id;
+      openCropModal(evt.target.result);
+      renderPeopleList();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function openCropModal(dataUrl) {
+    $('#cropTargetImg').attr('src', dataUrl);
+    $('#cropModal').addClass('active');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    setTimeout(function () {
+      cropper = new Cropper(document.getElementById('cropTargetImg'), {
+        aspectRatio: 4 / 5,
+        viewMode: 1,
+        dragMode: 'move',
+        autoCropArea: 0.9,
+        responsive: true,
+        background: false
+      });
+    }, 50);
+  }
+
+  $('#cancelCropBtn').on('click', function () {
+    const person = people.find(p => p.id === pendingPersonId);
+    if (person && !person.croppedImage) people = people.filter(p => p.id !== pendingPersonId);
+    closeCropModal();
+    renderPeopleList();
+    renderPreview();
+  });
+
+  $('#confirmCropBtn').on('click', function () {
+    if (!cropper) return;
+    const canvas = cropper.getCroppedCanvas({ width: 800, height: 1000, imageSmoothingQuality: 'high' });
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const person = people.find(p => p.id === pendingPersonId);
+    if (person) person.croppedImage = dataUrl;
+    closeCropModal();
+    renderPeopleList();
+    renderPreview();
+  });
+
+  function closeCropModal() {
+    $('#cropModal').removeClass('active');
+    if (cropper) { cropper.destroy(); cropper = null; }
+    pendingPersonId = null;
+  }
+
+  function renderPeopleList() {
+    const $list = $('#peopleList');
+    $list.empty();
+    people.forEach(function (person) {
+      const thumbHtml = person.croppedImage ? `<img src="${person.croppedImage}" alt="${person.name}">` : `<i class="fa-solid fa-image"></i>`;
+      const $card = $(`
+        <div class="person-card" data-id="${person.id}">
+          <button class="remove-btn" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+          <div class="thumb">${thumbHtml}</div>
+          <div class="name">${person.name}</div>
+          <div class="copies-label">Number of Copies</div>
+          <input type="number" class="copiesInput" min="1" max="200" value="${person.copies}">
+          <button class="btn btn-outline recrop-btn"><i class="fa-solid fa-crop-simple"></i> Re-crop</button>
+        </div>
+      `);
+      $list.append($card);
+    });
+  }
+
+  $('#peopleList').on('input', '.copiesInput', function () {
+    const id = $(this).closest('.person-card').data('id');
+    const val = Math.max(1, Math.min(200, parseInt($(this).val()) || 1));
+    const person = people.find(p => p.id === id);
+    if (person) person.copies = val;
+    renderPreview();
+  });
+
+  $('#peopleList').on('click', '.remove-btn', function () {
+    const id = $(this).closest('.person-card').data('id');
+    people = people.filter(p => p.id !== id);
+    renderPeopleList();
+    renderPreview();
+  });
+
+  function getColumns() {
+    return Math.max(1, Math.min(20, parseInt($('#columns').val()) || 6));
+  }
+
+  function renderPreview() {
+    const columns = getColumns();
+    let rows_per_page = (columns === 6) ? 7 : 6; 
+    const per_page_capacity = columns * rows_per_page;
+
+    let cells = [];
+    people.forEach(function (person) {
+      if (!person.croppedImage) return;
+      for (let i = 0; i < person.copies; i++) { cells.push(person.croppedImage); }
+    });
+
+    const $sheet = $('#previewSheet');
+    $sheet.empty();
+
+    if (cells.length === 0) {
+      $sheet.append('<div class="preview-empty">Add a person and crop a photo to see the live layout preview here.</div>');
+      $('#totalPhotosCount').text('0');
+      $('#summaryPages').text('1');
+      return;
+    }
+
+    const total_pages = Math.max(1, Math.ceil(cells.length / per_page_capacity));
+    const pageCells = cells.slice(0, per_page_capacity);
+
+    // Apply strict dynamic column and row gaps to precisely fit 42 pieces
+    $sheet.css({
+      'grid-template-columns': `repeat(${columns}, 1fr)`,
+      'column-gap': '3.5%',
+      'row-gap': '0.5%'
+    });
+
+    for (let i = 0; i < per_page_capacity; i++) {
+      if (i < pageCells.length) {
+        $sheet.append(`<div class="preview-cell" style="background-image:url('${pageCells[i]}')"></div>`);
+      } else {
+        $sheet.append(`<div class="preview-cell" style="background:transparent; border:1px dashed rgba(255,255,255,0.15)"></div>`);
+      }
+    }
+
+    $('#totalPhotosCount').text(cells.length);
+    $('#summaryColumns').text(columns);
+    $('#summaryPerPage').text(per_page_capacity);
+    $('#summaryPages').text(total_pages);
+  }
+
+  $('#columns, #pageSize').on('input change', renderPreview);
+
+  $('#generateBtn').on('click', function () {
+    const columns = getColumns();
+    const pageSize = $('#pageSize').val();
+    const validPeople = people.filter(p => p.croppedImage);
+
+    if (validPeople.length === 0) {
+      showStatus('Please add and crop at least one photo.', 'error');
+      return;
+    }
+
+    const payload = {
+      page_size: pageSize,
+      columns: columns,
+      people: validPeople.map(p => ({ cropped_image: p.croppedImage, copies: p.copies }))
+    };
+
+    const $btn = $(this);
+    $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
+
+    fetch('/photosheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(async function (response) {
+      if (!response.ok) throw new Error('Generation failed.');
+      const contentType = response.headers.get('Content-Type') || '';
+      const ext = contentType.includes('pdf') ? 'pdf' : 'jpg';
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `passport_photo_sheet.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showStatus('Sheet downloaded successfully!', 'success');
+    })
+    .catch(function (err) { showStatus(err.message, 'error'); })
+    .finally(function () { $btn.prop('disabled', false).html('<i class="fa-solid fa-print"></i> Generate & Download Sheet'); });
+  });
+
+  function showStatus(msg, type) {
+    $('#statusMsg').removeClass('error success').addClass(type || '').text(msg);
+  }
+
+  renderPreview();
+});
+</script>
+</body>
+</html>
